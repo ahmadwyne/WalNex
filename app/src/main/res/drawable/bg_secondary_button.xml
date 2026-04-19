@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
-    android:color="#40FFFFFF">
+    android:color="#3340097A">
 
     <item>
         <selector>
             <item
-                android:drawable="@drawable/bg_cta_gradient_disabled"
-                android:state_enabled="false" />
-            <item
-                android:drawable="@drawable/bg_cta_gradient_pressed"
+                android:drawable="@drawable/bg_secondary_button_pressed"
                 android:state_pressed="true" />
-            <item android:drawable="@drawable/bg_cta_gradient_default" />
+            <item android:drawable="@drawable/bg_secondary_button_default" />
         </selector>
     </item>
 

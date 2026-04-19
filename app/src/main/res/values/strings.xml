@@ -1,17 +1,24 @@
 <resources>
     <string name="app_name">WalNex</string>
-    <string name="manage_wallet_title">Manage your wallet</string>
-    <string name="wallet_subtitle">Bento-style preview using Inter, Plus Jakarta Sans, and the WalNex dark palette.</string>
-    <string name="your_balance">Your balance</string>
-    <string name="sample_balance">$12,480.00</string>
-    <string name="quick_actions">Quick actions</string>
-    <string name="top_up">Top up</string>
-    <string name="transfer">Transfer</string>
-    <string name="request">Request</string>
-    <string name="more">More</string>
-    <string name="income">Income</string>
-    <string name="expense">Expense</string>
-    <string name="income_amount">+ $2,450.00</string>
-    <string name="expense_amount">- $640.00</string>
+
+    <string name="walnex_wordmark">WalNex</string>
+    <string name="welcome_headline">Wallet payments made simple</string>
+    <string name="welcome_subtitle">Everything you need for daily payments in one secure and beautiful wallet experience.</string>
+    <string name="welcome_caption">Quick setup. Clear actions. Built for real users.</string>
     <string name="get_started">Get started</string>
+    <string name="already_have_account">I already have an account</string>
+
+    <string name="home_placeholder_title">Home</string>
+    <string name="home_placeholder_subtitle">Signed-in destination placeholder.</string>
+
+    <string name="startup_update_required_title">Update required</string>
+    <string name="startup_update_required_message">A newer version of Walnex is required to continue. Please update to keep your wallet secure.</string>
+    <string name="startup_update_required_action">Update app</string>
+
+    <string name="startup_maintenance_title">Scheduled maintenance</string>
+    <string name="startup_maintenance_message">Walnex is briefly unavailable while we improve reliability. Please try again in a few minutes.</string>
+    <string name="startup_maintenance_action">Try again</string>
+
+    <string name="splash_logo_content_desc">Walnex splash logo</string>
+    <string name="startup_state_icon_desc">Walnex logo</string>
 </resources>

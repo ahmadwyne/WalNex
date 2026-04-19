@@ -14,6 +14,7 @@
     <color name="bg_gradient_bottom">#090A0D</color>
 
     <!-- Brand accents -->
+    <color name="splash_inspo_purple">#5732BF</color>
     <color name="brand_gradient_start">#9B7CFF</color>
     <color name="brand_gradient_end">#5BB7FF</color>
     <color name="action_link">#59AFFF</color>
@@ -22,6 +23,7 @@
     <color name="text_primary">#FFFFFF</color>
     <color name="text_secondary">#B9C0CC</color>
     <color name="text_muted">#7B8494</color>
+    <color name="splash_text_secondary">#EAE0FF</color>
 
     <!-- Semantics -->
     <color name="money_success">#22C55E</color>
