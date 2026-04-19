@@ -12,8 +12,25 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WalNex"
         tools:targetApi="31">
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
+
+        <activity
+            android:name=".StartupStateActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".HomeActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Theme.WalNex.Splash"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
