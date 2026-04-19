@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">WalNex</string>
+    <string name="manage_wallet_title">Manage your wallet</string>
+    <string name="wallet_subtitle">Bento-style preview using Inter, Plus Jakarta Sans, and the WalNex dark palette.</string>
+    <string name="your_balance">Your balance</string>
+    <string name="sample_balance">$12,480.00</string>
+    <string name="quick_actions">Quick actions</string>
+    <string name="top_up">Top up</string>
+    <string name="transfer">Transfer</string>
+    <string name="request">Request</string>
+    <string name="more">More</string>
+    <string name="income">Income</string>
+    <string name="expense">Expense</string>
+    <string name="income_amount">+ $2,450.00</string>
+    <string name="expense_amount">- $640.00</string>
+    <string name="get_started">Get started</string>
 </resources>

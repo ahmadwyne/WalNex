@@ -1,5 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Base colors -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Dark-first background surfaces -->
+    <color name="bg_base">#0B0D10</color>
+    <color name="bg_elevated">#12151B</color>
+    <color name="bg_surface">#161A21</color>
+    <color name="bg_surface2">#1B2029</color>
+    <color name="divider_subtle">#242A36</color>
+    <color name="bg_gradient_top">#0B0D10</color>
+    <color name="bg_gradient_bottom">#090A0D</color>
+
+    <!-- Brand accents -->
+    <color name="brand_gradient_start">#9B7CFF</color>
+    <color name="brand_gradient_end">#5BB7FF</color>
+    <color name="action_link">#59AFFF</color>
+
+    <!-- Typography -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B9C0CC</color>
+    <color name="text_muted">#7B8494</color>
+
+    <!-- Semantics -->
+    <color name="money_success">#22C55E</color>
+    <color name="money_danger">#FF4D4D</color>
 </resources>
