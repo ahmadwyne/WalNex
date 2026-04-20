@@ -19,10 +19,14 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.walnex.auth.AuthFlow;
+import com.example.walnex.auth.AuthLocalStore;
+import com.example.walnex.auth.AuthNavigator;
 import com.example.walnex.startup.LaunchDestination;
 import com.example.walnex.startup.MainViewModel;
 import com.example.walnex.startup.StartupState;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -157,30 +161,37 @@ public class MainActivity extends AppCompatActivity {
     private boolean isSignedInWithFirebase() {
         try {
             FirebaseAuth auth = FirebaseAuth.getInstance();
-            return auth.getCurrentUser() != null;
+            FirebaseUser user = auth.getCurrentUser();
+            if (user == null) {
+                AuthLocalStore.clear(this);
+                return false;
+            }
+            return true;
         } catch (RuntimeException exception) {
             return false;
         }
     }
 
     private void route(LaunchDestination destination, StartupState startupState) {
-        Intent intent;
-
         switch (destination) {
             case HOME:
-                intent = new Intent(this, HomeActivity.class);
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                String phoneE164 = user != null ? user.getPhoneNumber() : null;
+                AuthNavigator.routeAfterSignIn(this, AuthFlow.MODE_SIGN_IN, phoneE164);
                 break;
             case STARTUP_BLOCKING:
-                intent = StartupStateActivity.newIntent(this, startupState);
+                Intent blockingIntent = StartupStateActivity.newIntent(this, startupState);
+                startActivity(blockingIntent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
                 break;
             case WELCOME:
             default:
-                intent = new Intent(this, WelcomeActivity.class);
+                Intent welcomeIntent = new Intent(this, WelcomeActivity.class);
+                startActivity(welcomeIntent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
                 break;
         }
-
-        startActivity(intent);
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-        finish();
     }
 }

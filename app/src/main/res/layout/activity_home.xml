@@ -35,6 +35,30 @@
             android:text="@string/home_placeholder_subtitle"
             android:textColor="@color/text_secondary"
             android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/textSignedInStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonResetCredentials"
+            style="@style/Widget.WalNex.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/auth_reset_credentials" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSignOut"
+            style="@style/Widget.WalNex.Button.SplashPrimary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/auth_sign_out" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

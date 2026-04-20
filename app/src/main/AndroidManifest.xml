@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -26,6 +28,18 @@
 
         <activity
             android:name=".WelcomeActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ProfileSetupActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".OtpVerificationActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".PhoneAuthActivity"
             android:exported="false" />
 
         <activity

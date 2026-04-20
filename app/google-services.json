@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "269016420495",
+    "project_id": "walnex-8776d",
+    "storage_bucket": "walnex-8776d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:269016420495:android:79ebbf5fc22ca5088aa0fa",
+        "android_client_info": {
+          "package_name": "com.example.walnex"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEln2WhUBldorMyhjDNCT8WigDG9M0ivM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

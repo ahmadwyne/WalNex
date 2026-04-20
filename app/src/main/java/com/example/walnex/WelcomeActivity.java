@@ -11,6 +11,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.walnex.auth.AuthFlow;
 import com.example.walnex.ui.BrandingUtils;
 import com.google.android.material.button.MaterialButton;
 
@@ -33,9 +34,9 @@ public class WelcomeActivity extends AppCompatActivity {
         animateWordmark(welcomeWordmark);
 
         MaterialButton getStartedButton = findViewById(R.id.buttonGetStarted);
-        getStartedButton.setOnClickListener(v -> routeToHome());
+        getStartedButton.setOnClickListener(v -> openPhoneAuth(AuthFlow.MODE_REGISTER));
 
-        findViewById(R.id.buttonExistingAccount).setOnClickListener(v -> routeToHome());
+        findViewById(R.id.buttonExistingAccount).setOnClickListener(v -> openPhoneAuth(AuthFlow.MODE_SIGN_IN));
     }
 
     private void animateWordmark(TextView wordmark) {
@@ -53,10 +54,9 @@ public class WelcomeActivity extends AppCompatActivity {
             .start();
     }
 
-    private void routeToHome() {
-        Intent intent = new Intent(this, HomeActivity.class);
+    private void openPhoneAuth(String mode) {
+        Intent intent = PhoneAuthActivity.newIntent(this, mode);
         startActivity(intent);
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-        finish();
     }
 }
