@@ -5,11 +5,11 @@
     <string name="welcome_headline">Wallet payments made simple</string>
     <string name="welcome_subtitle">Everything you need for daily payments in one secure and beautiful wallet experience.</string>
     <string name="welcome_caption">Quick setup. Clear actions. Built for real users.</string>
-    <string name="get_started">Get started</string>
-    <string name="already_have_account">I already have an account</string>
+    <string name="get_started">Create account</string>
+    <string name="already_have_account">Sign in</string>
 
-    <string name="home_placeholder_title">Home</string>
-    <string name="home_placeholder_subtitle">Signed-in destination placeholder.</string>
+    <string name="home_placeholder_title">Your Wallet</string>
+    <string name="home_placeholder_subtitle">You are signed in. From here you can continue to wallet features.</string>
 
     <string name="startup_update_required_title">Update required</string>
     <string name="startup_update_required_message">A newer version of Walnex is required to continue. Please update to keep your wallet secure.</string>
@@ -21,4 +21,51 @@
 
     <string name="splash_logo_content_desc">Walnex splash logo</string>
     <string name="startup_state_icon_desc">Walnex logo</string>
+
+    <string name="auth_back">Back</string>
+    <string name="auth_create_account">Create Account</string>
+    <string name="auth_sign_in">Sign in</string>
+    <string name="auth_enter_mobile_title">Enter your mobile number</string>
+    <string name="auth_mobile_label">Mobile number</string>
+    <string name="auth_mobile_hint">7X-XXXXXXX</string>
+    <string name="auth_continue">Continue</string>
+    <string name="auth_or_continue_using">or continue using</string>
+    <string name="auth_name">Name</string>
+    <string name="auth_name_hint">e.g. John Doe</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_email_hint">e.g. email@example.com</string>
+    <string name="auth_phone">Phone</string>
+    <string name="auth_terms">I accept terms and conditions and privacy policy</string>
+    <string name="auth_create_new_account">Create a new account</string>
+    <string name="auth_done">Done</string>
+    <string name="auth_resend_code">Resend code</string>
+    <string name="auth_resend_now">Resend now</string>
+    <string name="auth_otp_title">Verify your mobile number</string>
+    <string name="auth_otp_subtitle">An SMS sent to your mobile number</string>
+    <string name="auth_otp_enter_code">Enter six-digit code</string>
+    <string name="auth_otp_placeholder">XXX-XXX</string>
+    <string name="auth_reset_credentials">Reset credentials</string>
+    <string name="auth_sign_out">Sign out</string>
+    <string name="auth_sign_out_confirmation">Are you sure you want to sign out of WalNex?</string>
+    <string name="auth_status_signed_in_as">Signed in as %1$s</string>
+    <string name="auth_phone_verification_failed">Phone verification failed. Please try again.</string>
+    <string name="auth_otp_sent">OTP sent</string>
+    <string name="auth_invalid_mobile">Please enter a valid mobile number.</string>
+    <string name="auth_invalid_otp">Please enter the 6-digit OTP code.</string>
+    <string name="auth_verifying">Verifying...</string>
+    <string name="auth_failed">Authentication failed. Please retry.</string>
+    <string name="auth_profile_saved">Profile saved successfully.</string>
+    <string name="auth_name_required">Name is required.</string>
+    <string name="auth_accept_terms">Please accept terms and privacy policy.</string>
+    <string name="auth_email_invalid">Please enter a valid email address.</string>
+    <string name="auth_verify_for_reset">Verify your phone to reset credentials.</string>
+    <string name="auth_otp_target_number">%1$s</string>
+
+    <string name="social_facebook">Facebook</string>
+    <string name="social_google">Google</string>
+    <string name="social_apple">Apple</string>
+
+    <string name="content_phone_illustration">Phone illustration</string>
+    <string name="content_security_illustration">Security illustration</string>
+    <string name="content_backspace">Backspace</string>
 </resources>

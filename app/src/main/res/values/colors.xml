@@ -24,6 +24,11 @@
     <color name="text_secondary">#B9C0CC</color>
     <color name="text_muted">#7B8494</color>
     <color name="splash_text_secondary">#EAE0FF</color>
+    <color name="auth_text_dark">#1E1E24</color>
+    <color name="auth_text_muted">#8A8FA1</color>
+    <color name="auth_border">#E2E1EA</color>
+    <color name="auth_surface_light">#F7F4FF</color>
+    <color name="auth_surface_white">#FFFFFF</color>
 
     <!-- Semantics -->
     <color name="money_success">#22C55E</color>

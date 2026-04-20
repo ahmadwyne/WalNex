@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function userFieldsValid() {
+      return request.resource.data.keys().hasOnly([
+        'fullName',
+        'phoneE164',
+        'photoUrl',
+        'status',
+        'email',
+        'createdAt',
+        'updatedAt',
+        'lastLoginAt'
+      ]);
+    }
+
+    match /users/{uid} {
+      allow read: if isSelf(uid);
+
+      allow create: if isSelf(uid)
+        && userFieldsValid()
+        && (!('phoneE164' in request.resource.data)
+          || (request.resource.data.phoneE164 is string && request.resource.data.phoneE164.size() > 0));
+
+      allow update: if isSelf(uid)
+        && userFieldsValid()
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'fullName',
+          'photoUrl',
+          'email',
+          'createdAt',
+          'updatedAt',
+          'lastLoginAt',
+          'phoneE164',
+          'status'
+        ])
+        && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)
+        && (!('phoneE164' in resource.data) || request.resource.data.phoneE164 == resource.data.phoneE164)
+        && (!('status' in resource.data) || request.resource.data.status == resource.data.status);
+
+      allow delete: if false;
+    }
+
+    match /wallets/{uid} {
+      allow read: if isSelf(uid);
+      allow write: if false;
+    }
+
+    match /ledger/{uid}/entries/{entryId} {
+      allow read: if isSelf(uid);
+      allow write: if false;
+    }
+
+    match /transactions/{txId} {
+      allow read: if isSignedIn()
+        && (
+          resource.data.senderUid == request.auth.uid
+          || resource.data.receiverUid == request.auth.uid
+        );
+      allow write: if false;
+    }
+
+    match /notifications/{uid}/items/{notifId} {
+      allow read: if isSelf(uid);
+      allow create, delete: if false;
+      allow update: if isSelf(uid)
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['read'])
+        && request.resource.data.read is bool;
+    }
+
+    match /devices/{uid}/tokens/{tokenId} {
+      allow read: if isSelf(uid);
+      allow create, update: if isSelf(uid)
+        && request.resource.data.keys().hasOnly(['fcmToken', 'platform', 'createdAt', 'lastSeenAt'])
+        && request.resource.data.fcmToken is string
+        && request.resource.data.platform == 'android';
+      allow delete: if isSelf(uid);
+    }
+
+    match /phones/{phoneE164} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
