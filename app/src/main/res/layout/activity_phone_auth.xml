@@ -107,9 +107,10 @@
 
                 <Spinner
                     android:id="@+id/spinnerCountryCode"
-                    android:layout_width="86dp"
+                    android:layout_width="104dp"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
+                    android:dropDownWidth="300dp"
                     android:popupBackground="@drawable/bg_auth_spinner_popup"
                     android:spinnerMode="dropdown" />
 
