@@ -4,8 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -22,10 +22,16 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.walnex.auth.AuthFlow;
 import com.example.walnex.auth.AuthNavigator;
+import com.example.walnex.auth.Country;
+import com.example.walnex.auth.CountryCodeAdapter;
+import com.example.walnex.auth.CountryRepository;
 import com.example.walnex.auth.PhoneNumberFormatter;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.FirebaseTooManyRequestsException;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthMissingActivityForRecaptchaException;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
@@ -33,6 +39,9 @@ import com.google.firebase.auth.PhoneAuthProvider;
 import java.util.concurrent.TimeUnit;
 
 public class PhoneAuthActivity extends AppCompatActivity {
+
+    private static final String TAG = "PhoneAuthActivity";
+    private static final String DEFAULT_DIAL_CODE = "+962";
 
     public static Intent newIntent(Context context, String flowMode) {
         Intent intent = new Intent(context, PhoneAuthActivity.class);
@@ -106,19 +115,12 @@ public class PhoneAuthActivity extends AppCompatActivity {
     }
 
     private void setupCountryCodeSpinner() {
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
-            this,
-            R.array.country_codes,
-            R.layout.item_country_code_selected
-        );
-        adapter.setDropDownViewResource(R.layout.item_country_code_dropdown);
+        CountryCodeAdapter adapter = new CountryCodeAdapter(this, CountryRepository.all());
         spinnerCountryCode.setAdapter(adapter);
 
-        for (int i = 0; i < adapter.getCount(); i++) {
-            if ("+962".contentEquals(adapter.getItem(i))) {
-                spinnerCountryCode.setSelection(i);
-                break;
-            }
+        int defaultIndex = CountryRepository.indexOfDialCode(DEFAULT_DIAL_CODE);
+        if (defaultIndex >= 0) {
+            spinnerCountryCode.setSelection(defaultIndex);
         }
     }
 
@@ -132,7 +134,12 @@ public class PhoneAuthActivity extends AppCompatActivity {
             @Override
             public void onVerificationFailed(@NonNull FirebaseException error) {
                 setLoading(false);
-                Toast.makeText(PhoneAuthActivity.this, R.string.auth_phone_verification_failed, Toast.LENGTH_SHORT).show();
+                Log.w(TAG, "verifyPhoneNumber failed", error);
+                Toast.makeText(
+                    PhoneAuthActivity.this,
+                    describeVerificationError(error),
+                    Toast.LENGTH_LONG
+                ).show();
             }
 
             @Override
@@ -152,7 +159,10 @@ public class PhoneAuthActivity extends AppCompatActivity {
     }
 
     private void requestOtp() {
-        String countryCode = String.valueOf(spinnerCountryCode.getSelectedItem());
+        Object selected = spinnerCountryCode.getSelectedItem();
+        String countryCode = selected instanceof Country
+            ? ((Country) selected).dialCode
+            : String.valueOf(selected);
         String phoneE164 = PhoneNumberFormatter.toE164(countryCode, editPhoneNumber.getText().toString());
 
         if (TextUtils.isEmpty(phoneE164)) {
@@ -188,5 +198,20 @@ public class PhoneAuthActivity extends AppCompatActivity {
     private void setLoading(boolean isLoading) {
         progressSendOtp.setVisibility(isLoading ? ProgressBar.VISIBLE : ProgressBar.GONE);
         buttonContinue.setEnabled(!isLoading);
+    }
+
+    private String describeVerificationError(FirebaseException error) {
+        String fallback = getString(R.string.auth_phone_verification_failed);
+        if (error instanceof FirebaseAuthInvalidCredentialsException) {
+            return fallback + " (invalid phone number format)";
+        }
+        if (error instanceof FirebaseTooManyRequestsException) {
+            return fallback + " (too many attempts, try later)";
+        }
+        if (error instanceof FirebaseAuthMissingActivityForRecaptchaException) {
+            return fallback + " (reCAPTCHA could not start)";
+        }
+        String message = error.getMessage();
+        return TextUtils.isEmpty(message) ? fallback : fallback + ": " + message;
     }
 }

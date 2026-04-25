@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -30,6 +31,8 @@ import com.google.firebase.auth.PhoneAuthProvider;
 import java.util.concurrent.TimeUnit;
 
 public class OtpVerificationActivity extends AppCompatActivity {
+
+    private static final String TAG = "OtpVerificationActivity";
 
     public static Intent newIntent(Context context, String flowMode, String phoneE164, String verificationId) {
         Intent intent = new Intent(context, OtpVerificationActivity.class);
@@ -225,7 +228,12 @@ public class OtpVerificationActivity extends AppCompatActivity {
 
                 @Override
                 public void onVerificationFailed(@NonNull FirebaseException e) {
-                    Toast.makeText(OtpVerificationActivity.this, R.string.auth_phone_verification_failed, Toast.LENGTH_SHORT).show();
+                    Log.w(TAG, "resendCode failed", e);
+                    String fallback = getString(R.string.auth_phone_verification_failed);
+                    String message = TextUtils.isEmpty(e.getMessage())
+                        ? fallback
+                        : fallback + ": " + e.getMessage();
+                    Toast.makeText(OtpVerificationActivity.this, message, Toast.LENGTH_LONG).show();
                     startResendTimer();
                 }
 
