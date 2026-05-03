@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Single card page for ViewPager2 / CardsAdapter.
+
+    ViewPager2 REQUIRES the page root to be match_parent in BOTH dimensions.
+    The PageTransformer works on this full-size frame; cards behind the active
+    one are translated upward so their top strip peeks above the active card.
+    The CardView is pinned to the bottom via layout_gravity.
+-->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:cardUseCompatPadding="false">
+
+        <!-- Textured background (swapped per card by adapter) -->
+        <ImageView
+            android:id="@+id/imageCardBg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitXY"
+            android:contentDescription="Card background"
+            android:src="@drawable/bg_card_circles" />
+
+        <!-- Content overlay -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="20dp">
+
+            <!-- Top-left: Cardholder name -->
+            <TextView
+                android:id="@+id/textCardHolderName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:text="Card Holder" />
+
+            <!-- Top-right: Masked card number -->
+            <TextView
+                android:id="@+id/textCardNumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentTop="true"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textColor="#CCFFFFFF"
+                android:textSize="13sp"
+                android:letterSpacing="0.08"
+                android:text="**** 0000" />
+
+            <!-- Bottom-left: Balance label + amount -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentBottom="true"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/plus_jakarta_sans"
+                    android:text="@string/cards_balance_label"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/textCardBalance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/plus_jakarta_sans"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:text="PKR 0" />
+            </LinearLayout>
+
+            <!-- Bottom-right: NFC icon -->
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:src="@drawable/ic_nfc"
+                android:contentDescription="NFC"
+                app:tint="#CCFFFFFF" />
+
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+
+</FrameLayout>

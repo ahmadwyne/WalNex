@@ -33,4 +33,42 @@
     <!-- Semantics -->
     <color name="money_success">#22C55E</color>
     <color name="money_danger">#FF4D4D</color>
+
+    <!-- Home Screen - Header / Card -->
+    <color name="home_header_bg">#280584</color>
+    <color name="home_card_gradient_start">#330e92</color>
+    <color name="home_card_gradient_end">#4a289e</color>
+    <color name="home_card_action_divider">#60FFFFFF</color>
+
+    <!-- Home Screen - Body (white sheet) -->
+    <color name="home_sheet_bg">#FFFFFF</color>
+    <color name="home_section_title">#1A1A2E</color>
+    <color name="home_section_subtitle">#505d66</color>
+    <color name="home_text_muted">#86939b</color>
+    <color name="home_view_all">#7343e7</color>
+    <color name="home_divider">#F0F0F5</color>
+
+    <!-- Transaction colors -->
+    <color name="tx_debit_bg">#fff6f6</color>
+    <color name="tx_debit_text">#cc2223</color>
+    <color name="tx_credit_bg">#f0fff5</color>
+    <color name="tx_credit_text">#16a34a</color>
+    <color name="tx_detail_label">#86939b</color>
+    <color name="tx_detail_value">#505d66</color>
+    <color name="tx_report_red">#cc2223</color>
+
+    <!-- Bottom Navigation -->
+    <color name="nav_selected">#7343e7</color>
+    <color name="nav_unselected">#505d66</color>
+    <color name="nav_bg">#FFFFFF</color>
+    <color name="nav_indicator">#F3EEFF</color>
+
+    <!-- History Screen -->
+    <color name="history_bg">#FFFFFF</color>
+    <color name="history_heading">#191919</color>
+    <color name="history_icon_tint">#191919</color>
+    <color name="history_search_hint">#c1cace</color>
+    <color name="history_section_label">#86939b</color>
+    <color name="history_section_divider">#eceff6</color>
+    <color name="history_row_muted">#86939b</color>
 </resources>

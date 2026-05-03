@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">WalNex</string>
 
@@ -8,9 +9,62 @@
     <string name="get_started">Create account</string>
     <string name="already_have_account">Sign in</string>
 
-    <string name="home_placeholder_title">Your Wallet</string>
-    <string name="home_placeholder_subtitle">You are signed in. From here you can continue to wallet features.</string>
+    <!-- Home Screen -->
+    <string name="home_greeting_hello">Hello,</string>
+    <string name="home_greeting_name">%1$s!</string>
+    <string name="home_main_balance_label">Main balance</string>
+    <string name="home_balance_amount">PKR %1$s</string>
+    <string name="home_action_topup">Top up</string>
+    <string name="home_action_withdraw">Withdraw</string>
+    <string name="home_action_transfer">Transfer</string>
+    <string name="home_recent_transfers_title">Recent Transfers</string>
+    <string name="home_add_recipient">Add</string>
+    <string name="home_latest_transactions_title">Latest Transactions</string>
+    <string name="home_view_all">View all</string>
+    <string name="home_settings_desc">Settings</string>
+    <string name="home_avatar_desc">User avatar</string>
+    <string name="home_recipient_avatar_desc">%1$s avatar</string>
 
+    <!-- Transaction Detail Bottom Sheet -->
+    <string name="tx_detail_done">Done</string>
+    <string name="tx_detail_report">Report a problem</string>
+    <string name="tx_detail_transaction_no_label">Transaction no.</string>
+    <string name="tx_detail_copy_desc">Copy transaction number</string>
+    <string name="tx_copied">Transaction number copied</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_history">History</string>
+    <string name="nav_cards">Cards</string>
+    <string name="nav_more">More</string>
+
+    <!-- History Screen -->
+    <string name="history_title">History</string>
+    <string name="history_search_hint">Enter Value to Search</string>
+    <string name="history_filter">Filter</string>
+    <string name="history_empty_title">No transactions yet</string>
+    <string name="history_empty_subtitle">Your transaction history will appear here.</string>
+    <string name="history_section_today">Today</string>
+    <string name="history_section_yesterday">Yesterday</string>
+
+    <!-- More Screen -->
+    <string name="more_pay_bills">Pay bills</string>
+    <string name="more_analytics">Analytics</string>
+    <string name="more_help">Help</string>
+    <string name="more_contact_us">Contact us</string>
+    <string name="more_about">About</string>
+
+    <!-- Cards Screen -->
+    <string name="cards_title">My Cards</string>
+    <string name="cards_add_card">Add card +</string>
+    <string name="cards_balance_label">Balance</string>
+
+    <!-- Card Payment Screen -->
+    <string name="card_payment_back">Back</string>
+    <string name="card_payment_nfc_hint">Move near a device to pay</string>
+    <string name="card_payment_qr_pay">QR Pay</string>
+
+    <!-- Startup States -->
     <string name="startup_update_required_title">Update required</string>
     <string name="startup_update_required_message">A newer version of Walnex is required to continue. Please update to keep your wallet secure.</string>
     <string name="startup_update_required_action">Update app</string>
@@ -22,6 +76,7 @@
     <string name="splash_logo_content_desc">Walnex splash logo</string>
     <string name="startup_state_icon_desc">Walnex logo</string>
 
+    <!-- Auth -->
     <string name="auth_back">Back</string>
     <string name="auth_create_account">Create Account</string>
     <string name="auth_sign_in">Sign in</string>
@@ -52,7 +107,7 @@
     <string name="auth_otp_sent">OTP sent</string>
     <string name="auth_invalid_mobile">Please enter a valid mobile number.</string>
     <string name="auth_invalid_otp">Please enter the 6-digit OTP code.</string>
-    <string name="auth_verifying">Verifying...</string>
+    <string name="auth_verifying">Verifying&#8230;</string>
     <string name="auth_failed">Authentication failed. Please retry.</string>
     <string name="auth_profile_saved">Profile saved successfully.</string>
     <string name="auth_name_required">Name is required.</string>
