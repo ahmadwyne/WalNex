@@ -41,7 +41,7 @@ public class TransferFailedActivity extends AppCompatActivity {
         setContentView(R.layout.activity_transfer_failed);
 
         ViewCompat.setOnApplyWindowInsetsListener(
-                findViewById(android.R.id.content), (v, insets) -> {
+                findViewById(R.id.transferFailedRoot), (v, insets) -> {
                     Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                     v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
                     return insets;
@@ -54,6 +54,7 @@ public class TransferFailedActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        super.onBackPressed();
         goHome();
     }
 
