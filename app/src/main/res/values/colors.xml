@@ -71,4 +71,9 @@
     <color name="history_section_label">#86939b</color>
     <color name="history_section_divider">#eceff6</color>
     <color name="history_row_muted">#86939b</color>
+
+    <!-- Amount field: placeholder color (before typing) -->
+    <color name="transfer_amount_placeholder">#b8c2c7</color>
+    <!-- Amount field: active color (while typing) -->
+    <color name="transfer_amount_active">#1A1A1A</color>
 </resources>

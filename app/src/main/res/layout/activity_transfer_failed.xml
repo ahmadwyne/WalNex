@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FDF5F5">
+
+    <!-- Decorative dots (small circles scattered) -->
+    <View
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:layout_marginStart="60dp"
+        android:layout_marginTop="200dp"
+        android:background="@drawable/dot_pink" />
+
+    <View
+        android:layout_width="6dp"
+        android:layout_height="6dp"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="280dp"
+        android:background="@drawable/dot_pink" />
+
+    <View
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="50dp"
+        android:layout_marginTop="220dp"
+        android:background="@drawable/dot_pink" />
+
+    <View
+        android:layout_width="6dp"
+        android:layout_height="6dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="70dp"
+        android:layout_marginTop="340dp"
+        android:background="@drawable/dot_pink" />
+
+    <View
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="40dp"
+        android:layout_marginTop="290dp"
+        android:background="@drawable/dot_pink" />
+
+    <View
+        android:layout_width="6dp"
+        android:layout_height="6dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="350dp"
+        android:background="@drawable/dot_pink" />
+
+    <!-- Center Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="40dp">
+
+        <!-- Error Icon: Red circle with document + X -->
+        <RelativeLayout
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="24dp">
+
+            <!-- Document icon background -->
+            <ImageView
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_centerInParent="true"
+                android:src="@drawable/ic_transfer_failed"
+                android:contentDescription="Transfer failed icon" />
+
+        </RelativeLayout>
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Transfer Failed :("
+            android:textColor="#1A1A2E"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Subtitle -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Your transfer has been declined\ndue to a technical issue"
+            android:textColor="#8E8E93"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp" />
+
+    </LinearLayout>
+
+    <!-- Back to Wallet Button -->
+    <Button
+        android:id="@+id/btnBackToWallet"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="32dp"
+        android:background="@drawable/bg_button_purple"
+        android:text="Back to wallet"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textAllCaps="false"
+        android:fontFamily="sans-serif-medium" />
+
+</RelativeLayout>

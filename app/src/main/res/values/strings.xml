@@ -64,6 +64,16 @@
     <string name="card_payment_nfc_hint">Move near a device to pay</string>
     <string name="card_payment_qr_pay">QR Pay</string>
 
+    <!-- Transfer Screen -->
+    <string name="transfer_load_contacts_failed">Could not load contacts. Please try again.</string>
+    <string name="transfer_enter_amount">Please enter an amount</string>
+    <string name="transfer_not_signed_in">You must be signed in to transfer</string>
+    <string name="transfer_success">Transfer to %1$s was successful!</string>
+    <string name="transfer_failed">Transfer failed. Please try again.</string>
+    <string name="transfer_contact_read_error">Could not read contact</string>
+    <string name="transfer_no_device_contacts">No contacts found on this device</string>
+    <string name="transfer_insufficient_funds">Insufficient balance to complete this transfer.</string>
+
     <!-- Startup States -->
     <string name="startup_update_required_title">Update required</string>
     <string name="startup_update_required_message">A newer version of Walnex is required to continue. Please update to keep your wallet secure.</string>

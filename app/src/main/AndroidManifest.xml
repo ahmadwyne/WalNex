@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <application
         android:allowBackup="true"
@@ -14,6 +15,24 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WalNex"
         tools:targetApi="31">
+        <activity
+            android:name=".TransferFailedActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PaymentDoneActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TransferToUserActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TransferToActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TransfertoUserActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TransfertoActivity"
+            android:exported="false" />
         <activity
             android:name=".CardPaymentActivity"
             android:exported="false" />
