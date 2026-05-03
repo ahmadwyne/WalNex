@@ -11,6 +11,10 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -127,7 +131,8 @@ public class HistoryActivity extends AppCompatActivity {
     private void loadTransactions() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
-            adapter.updateList(buildFlatList(new ArrayList<>()));
+            allTransactions = new ArrayList<>();
+            applyFilters();
             return;
         }
 
@@ -147,10 +152,13 @@ public class HistoryActivity extends AppCompatActivity {
                     }
                 }
                 allTransactions = list;
-                adapter.updateList(buildFlatList(allTransactions));
+                applyFilters();
             })
             .addOnFailureListener(error ->
-                adapter.updateList(buildFlatList(new ArrayList<>()))
+                {
+                    allTransactions = new ArrayList<>();
+                    applyFilters();
+                }
             );
     }
 
@@ -268,41 +276,69 @@ public class HistoryActivity extends AppCompatActivity {
     }
 
     private void showFilterDialog() {
-        String[] options = new String[] {
-            getString(R.string.history_filter_all),
-            getString(R.string.history_filter_in),
-            getString(R.string.history_filter_out)
-        };
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_history_filter, null);
+        RadioGroup group = view.findViewById(R.id.radioGroupFilter);
+        RadioButton optionAll = view.findViewById(R.id.radioFilterAll);
+        RadioButton optionIn = view.findViewById(R.id.radioFilterIn);
+        RadioButton optionOut = view.findViewById(R.id.radioFilterOut);
+        View rowAll = view.findViewById(R.id.rowFilterAll);
+        View rowIn = view.findViewById(R.id.rowFilterIn);
+        View rowOut = view.findViewById(R.id.rowFilterOut);
+        TextView cancel = view.findViewById(R.id.textFilterCancel);
+        TextView reset = view.findViewById(R.id.textFilterReset);
+        View apply = view.findViewById(R.id.buttonFilterApply);
 
-        int checked;
-        switch (filterMode) {
-            case CREDIT:
-                checked = 1;
-                break;
-            case DEBIT:
-                checked = 2;
-                break;
-            case ALL:
-            default:
-                checked = 0;
-                break;
+        if (filterMode == FilterMode.CREDIT) {
+            optionIn.setChecked(true);
+        } else if (filterMode == FilterMode.DEBIT) {
+            optionOut.setChecked(true);
+        } else {
+            optionAll.setChecked(true);
         }
 
-        new AlertDialog.Builder(this)
-            .setTitle(R.string.history_filter)
-            .setSingleChoiceItems(options, checked, (dialog, which) -> {
-                if (which == 1) {
-                    filterMode = FilterMode.CREDIT;
-                } else if (which == 2) {
-                    filterMode = FilterMode.DEBIT;
-                } else {
-                    filterMode = FilterMode.ALL;
-                }
-                dialog.dismiss();
-                applyFilters();
-            })
-            .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.dismiss())
-            .show();
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setView(view)
+            .create();
+
+        dialog.setOnShowListener(d -> {
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                int screenWidth = getResources().getDisplayMetrics().widthPixels;
+                int maxWidth = dpToPx(320);
+                int dialogWidth = Math.min(maxWidth, (int) (screenWidth * 0.92f));
+                dialog.getWindow().setLayout(dialogWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+            }
+        });
+
+        rowAll.setOnClickListener(v -> optionAll.setChecked(true));
+        rowIn.setOnClickListener(v -> optionIn.setChecked(true));
+        rowOut.setOnClickListener(v -> optionOut.setChecked(true));
+
+        cancel.setOnClickListener(v -> dialog.dismiss());
+        reset.setOnClickListener(v -> {
+            filterMode = FilterMode.ALL;
+            optionAll.setChecked(true);
+            applyFilters();
+            dialog.dismiss();
+        });
+        apply.setOnClickListener(v -> {
+            int checkedId = group.getCheckedRadioButtonId();
+            if (checkedId == R.id.radioFilterIn) {
+                filterMode = FilterMode.CREDIT;
+            } else if (checkedId == R.id.radioFilterOut) {
+                filterMode = FilterMode.DEBIT;
+            } else {
+                filterMode = FilterMode.ALL;
+            }
+            applyFilters();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     // ── Nav bar ───────────────────────────────────────────────────────────────
