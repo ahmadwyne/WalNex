@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Single contact row used by TransferContactsAdapter.
+    Avatar | Name + Phone | Chevron right
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:background="?attr/selectableItemBackground">
+
+    <!-- Avatar -->
+    <ImageView
+        android:id="@+id/imageContactAvatar"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:src="@drawable/ic_person_avatar"
+        android:scaleType="centerCrop"
+        android:background="@drawable/bg_avatar_circle"
+        android:contentDescription="Contact avatar" />
+
+    <!-- Name + phone -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="12dp">
+
+        <TextView
+            android:id="@+id/textContactName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#1A1A1A"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/plus_jakarta_sans"
+            android:text="Contact Name" />
+
+        <TextView
+            android:id="@+id/textContactPhone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="#98a2a9"
+            android:textSize="12sp"
+            android:fontFamily="@font/plus_jakarta_sans"
+            android:text="+1-000-000-0000" />
+    </LinearLayout>
+
+    <!-- Chevron right -->
+    <ImageView
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:src="@drawable/ic_chevron_right"
+        app:tint="#c8d0d4"
+        android:contentDescription="Select" />
+
+</LinearLayout>

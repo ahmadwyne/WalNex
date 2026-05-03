@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Amount-entry screen.
+    Top half: recipient card + "Enter Amount" label + styled input field
+    Bottom half: numeric keypad + Done button (hidden after Done → Secure Payment button shown)
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/transferUserRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <!-- ===== BACK ROW ===== -->
+    <LinearLayout
+        android:id="@+id/layoutTransferUserBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_chevron_left"
+            app:tint="#0064ca"
+            android:contentDescription="Back" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="Back"
+            android:textColor="#0064ca"
+            android:textSize="15sp"
+            android:fontFamily="@font/plus_jakarta_sans"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- ===== TITLE ===== -->
+    <TextView
+        android:id="@+id/textTransferUserTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:text="Transfer to"
+        android:textColor="#1A1A1A"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/plus_jakarta_sans"
+        app:layout_constraintTop_toBottomOf="@id/layoutTransferUserBack"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ===== RECIPIENT CARD ===== -->
+    <LinearLayout
+        android:id="@+id/layoutRecipientCard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/textTransferUserTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:id="@+id/imageTransferRecipientAvatar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_person_avatar"
+            android:scaleType="centerCrop"
+            android:background="@drawable/bg_avatar_circle"
+            android:contentDescription="Recipient avatar" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="10dp">
+
+            <TextView
+                android:id="@+id/textTransferRecipientName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#1A1A1A"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:text="Recipient Name" />
+
+            <TextView
+                android:id="@+id/textTransferRecipientPhone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="#98a2a9"
+                android:textSize="13sp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:text="+1-000-000-0000" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ===== ENTER AMOUNT LABEL ===== -->
+    <TextView
+        android:id="@+id/textEnterAmountLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Enter Amount"
+        android:textColor="#7d8b94"
+        android:textSize="13sp"
+        android:fontFamily="@font/plus_jakarta_sans"
+        app:layout_constraintTop_toBottomOf="@id/layoutRecipientCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ===== AMOUNT DISPLAY FIELD ===== -->
+    <!--
+        This is a read-only TextView styled as an input:
+        • No left/right/top border — only a bottom underline (via background drawable)
+        • Text set programmatically by the keypad
+    -->
+    <TextView
+        android:id="@+id/textTransferAmount"
+        android:layout_width="200dp"
+        android:layout_height="52dp"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:text="PKR00.00"
+        android:textColor="#b8c2c7"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/plus_jakarta_sans"
+        android:background="@drawable/bg_amount_underline"
+        android:paddingBottom="6dp"
+        app:layout_constraintTop_toBottomOf="@id/textEnterAmountLabel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ===== DIVIDER between top area and keypad ===== -->
+    <View
+        android:id="@+id/dividerKeypad"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#EBEBEB"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/textTransferAmount"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ===== NUMERIC KEYPAD ===== -->
+    <LinearLayout
+        android:id="@+id/layoutNumericKeypad"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/dividerKeypad"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Row 1: 1 2 3 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:orientation="horizontal">
+
+            <Button android:id="@+id/key1"
+                style="@style/KeypadDigitButton"
+                android:text="1" android:tag="1" />
+            <Button android:id="@+id/key2"
+                style="@style/KeypadDigitButton"
+                android:text="2" android:tag="2" />
+            <Button android:id="@+id/key3"
+                style="@style/KeypadDigitButton"
+                android:text="3" android:tag="3" />
+        </LinearLayout>
+
+        <!-- Row 2: 4 5 6 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:orientation="horizontal">
+
+            <Button android:id="@+id/key4"
+                style="@style/KeypadDigitButton"
+                android:text="4" android:tag="4" />
+            <Button android:id="@+id/key5"
+                style="@style/KeypadDigitButton"
+                android:text="5" android:tag="5" />
+            <Button android:id="@+id/key6"
+                style="@style/KeypadDigitButton"
+                android:text="6" android:tag="6" />
+        </LinearLayout>
+
+        <!-- Row 3: 7 8 9 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:orientation="horizontal">
+
+            <Button android:id="@+id/key7"
+                style="@style/KeypadDigitButton"
+                android:text="7" android:tag="7" />
+            <Button android:id="@+id/key8"
+                style="@style/KeypadDigitButton"
+                android:text="8" android:tag="8" />
+            <Button android:id="@+id/key9"
+                style="@style/KeypadDigitButton"
+                android:text="9" android:tag="9" />
+        </LinearLayout>
+
+        <!-- Row 4: . 0 ⌫ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:orientation="horizontal">
+
+            <Button android:id="@+id/keyDot"
+                style="@style/KeypadDigitButton"
+                android:text="." android:tag="." />
+            <Button android:id="@+id/key0"
+                style="@style/KeypadDigitButton"
+                android:text="0" android:tag="0" />
+            <ImageButton android:id="@+id/keyBackspace"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_backspace"
+                app:tint="#1A1A1A"
+                android:contentDescription="Backspace"
+                android:scaleType="center" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ===== DONE BUTTON ===== -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnTransferDone"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="16dp"
+        android:text="Done"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:fontFamily="@font/plus_jakarta_sans"
+        android:textStyle="bold"
+        android:backgroundTint="#5b31be"
+        app:cornerRadius="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ===== SECURE PAYMENT BUTTON (hidden until Done is pressed) ===== -->
+    <!--
+        Styled with yellow background (#ffbf1e), purple icon + text (#5b31be).
+        Revealed with slide-up animation after Done collapses the keypad.
+    -->
+    <LinearLayout
+        android:id="@+id/layoutSecurePayment"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_secure_pay_button"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_lock"
+            app:tint="#5b31be"
+            android:contentDescription="Secure payment icon" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Secure Payment"
+            android:textColor="#5b31be"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/plus_jakarta_sans" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

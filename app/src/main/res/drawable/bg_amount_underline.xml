@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Gives the amount display field a purple bottom underline only.
+    Uses a layer-list: a full transparent rectangle PLUS a purple
+    bottom border via insets.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    <!-- Bottom border only -->
+    <item
+        android:top="-4dp"
+        android:left="-4dp"
+        android:right="-4dp">
+        <shape android:shape="rectangle">
+            <stroke android:width="2dp" android:color="#5b31be" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+</layer-list>

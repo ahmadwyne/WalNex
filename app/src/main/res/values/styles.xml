@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Style for the numeric keypad digit buttons.
+        Transparent background, large black text, weight=1 so all 3 per row share width equally.
+    -->
+    <style name="KeypadDigitButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textColor">#1A1A1A</item>
+        <item name="android:fontFamily">@font/plus_jakarta_sans</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+</resources>

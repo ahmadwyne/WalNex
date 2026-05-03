@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/transferToRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="16dp"
+        android:paddingBottom="32dp">
+
+        <!-- ===== BACK ROW ===== -->
+        <LinearLayout
+            android:id="@+id/layoutTransferBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_chevron_left"
+                app:tint="#0064ca"
+                android:contentDescription="Back" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="Back"
+                android:textColor="#0064ca"
+                android:textSize="15sp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- ===== TITLE ===== -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="20dp"
+            android:text="Transfer to"
+            android:textColor="#1A1A1A"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/plus_jakarta_sans" />
+
+        <!-- ===== NEW CONTACT ROW ===== -->
+        <LinearLayout
+            android:id="@+id/layoutNewContact"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground">
+
+            <!-- Circle icon background -->
+            <FrameLayout
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_new_contact_circle">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_plus"
+                    app:tint="#5b31be"
+                    android:contentDescription="New contact" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="New contact"
+                android:textColor="#1A1A1A"
+                android:textSize="15sp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- ===== OR DIVIDER ===== -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:gravity="center"
+            android:text="or"
+            android:textColor="#98a2a9"
+            android:textSize="13sp"
+            android:fontFamily="@font/plus_jakarta_sans" />
+
+        <!-- ===== SEARCH BAR ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_search_bar"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_search"
+                app:tint="#272727"
+                android:contentDescription="Search" />
+
+            <EditText
+                android:id="@+id/editSearchContact"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:hint="Search contact"
+                android:textColorHint="#bcc6ca"
+                android:textColor="#1A1A1A"
+                android:textSize="14sp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:background="@null"
+                android:inputType="text"
+                android:imeOptions="actionSearch"
+                android:singleLine="true" />
+        </LinearLayout>
+
+        <!-- ===== FREQUENT CONTACTS SECTION ===== -->
+        <LinearLayout
+            android:id="@+id/layoutFrequentSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="20dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginBottom="8dp"
+                android:text="Frequent contacts"
+                android:textColor="#5b6770"
+                android:textSize="13sp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textStyle="bold" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvFrequentContacts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
+
+            <TextView
+                android:id="@+id/textFrequentEmpty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="8dp"
+                android:text="No recent transfers yet"
+                android:textColor="#98a2a9"
+                android:textSize="13sp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- ===== ALL CONTACTS SECTION ===== -->
+        <!-- ===== ALL CONTACTS SECTION ===== -->
+        <LinearLayout
+            android:id="@+id/layoutAllSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginBottom="8dp"
+                android:text="All contacts"
+                android:textColor="#5b6770"
+                android:textSize="13sp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textStyle="bold" />
+
+            <!-- Permission denied message -->
+            <TextView
+                android:id="@+id/textNoContactsPermission"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/transfer_contact_read_error"
+                android:textColor="#98a2a9"
+                android:textSize="13sp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvAllContacts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
