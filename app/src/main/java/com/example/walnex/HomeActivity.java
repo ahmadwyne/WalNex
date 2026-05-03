@@ -210,8 +210,10 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         // Settings icon
-        findViewById(R.id.imageSettings).setOnClickListener(v ->
-                Toast.makeText(this, "Settings – coming soon", Toast.LENGTH_SHORT).show());
+        findViewById(R.id.imageSettings).setOnClickListener(v -> {
+            startActivity(SettingsActivity.newIntent(this));
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
     }
 
     // ──────────────────────────────────────────────────────────────────────────

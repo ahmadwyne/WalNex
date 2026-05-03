@@ -22,6 +22,7 @@
     <string name="home_latest_transactions_title">Latest Transactions</string>
     <string name="home_view_all">View all</string>
     <string name="home_settings_desc">Settings</string>
+    <string name="settings_title">Settings</string>
     <string name="home_avatar_desc">User avatar</string>
     <string name="home_recipient_avatar_desc">%1$s avatar</string>
 
@@ -114,6 +115,7 @@
     <string name="auth_sign_out_confirmation">Are you sure you want to sign out of WalNex?</string>
     <string name="auth_status_signed_in_as">Signed in as %1$s</string>
     <string name="auth_phone_verification_failed">Phone verification failed. Please try again.</string>
+    <string name="auth_phone_verification_timeout">Phone verification timed out. Please try again.</string>
     <string name="auth_otp_sent">OTP sent</string>
     <string name="auth_invalid_mobile">Please enter a valid mobile number.</string>
     <string name="auth_invalid_otp">Please enter the 6-digit OTP code.</string>

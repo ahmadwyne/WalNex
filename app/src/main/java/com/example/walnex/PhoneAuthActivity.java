@@ -3,6 +3,8 @@ package com.example.walnex;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -42,6 +44,7 @@ public class PhoneAuthActivity extends AppCompatActivity {
 
     private static final String TAG = "PhoneAuthActivity";
     private static final String DEFAULT_DIAL_CODE = "+962";
+    private static final long OTP_REQUEST_TIMEOUT_MS = 25000L;
 
     public static Intent newIntent(Context context, String flowMode) {
         Intent intent = new Intent(context, PhoneAuthActivity.class);
@@ -62,6 +65,9 @@ public class PhoneAuthActivity extends AppCompatActivity {
     private String pendingPhoneE164;
 
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks callbacks;
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable requestTimeout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +94,12 @@ public class PhoneAuthActivity extends AppCompatActivity {
 
         findViewById(R.id.textBack).setOnClickListener(v -> finish());
         buttonContinue.setOnClickListener(v -> requestOtp());
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        cancelRequestTimeout();
     }
 
     private void bindViews() {
@@ -128,11 +140,13 @@ public class PhoneAuthActivity extends AppCompatActivity {
         callbacks = new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
             @Override
             public void onVerificationCompleted(@NonNull PhoneAuthCredential credential) {
+                cancelRequestTimeout();
                 signInWithCredential(credential);
             }
 
             @Override
             public void onVerificationFailed(@NonNull FirebaseException error) {
+                cancelRequestTimeout();
                 setLoading(false);
                 Log.w(TAG, "verifyPhoneNumber failed", error);
                 Toast.makeText(
@@ -145,6 +159,7 @@ public class PhoneAuthActivity extends AppCompatActivity {
             @Override
             public void onCodeSent(@NonNull String verificationId,
                                    @NonNull PhoneAuthProvider.ForceResendingToken token) {
+                cancelRequestTimeout();
                 setLoading(false);
                 Toast.makeText(PhoneAuthActivity.this, R.string.auth_otp_sent, Toast.LENGTH_SHORT).show();
                 Intent intent = OtpVerificationActivity.newIntent(
@@ -172,6 +187,7 @@ public class PhoneAuthActivity extends AppCompatActivity {
 
         pendingPhoneE164 = phoneE164;
         setLoading(true);
+        startRequestTimeout();
 
         PhoneAuthOptions options = PhoneAuthOptions.newBuilder(auth)
             .setPhoneNumber(phoneE164)
@@ -186,6 +202,7 @@ public class PhoneAuthActivity extends AppCompatActivity {
     private void signInWithCredential(PhoneAuthCredential credential) {
         auth.signInWithCredential(credential)
             .addOnCompleteListener(result -> {
+                cancelRequestTimeout();
                 setLoading(false);
                 if (result.isSuccessful()) {
                     AuthNavigator.routeAfterSignIn(this, flowMode, pendingPhoneE164);
@@ -193,6 +210,22 @@ public class PhoneAuthActivity extends AppCompatActivity {
                     Toast.makeText(this, R.string.auth_failed, Toast.LENGTH_SHORT).show();
                 }
             });
+    }
+
+    private void startRequestTimeout() {
+        cancelRequestTimeout();
+        requestTimeout = () -> {
+            setLoading(false);
+            Toast.makeText(this, R.string.auth_phone_verification_timeout, Toast.LENGTH_LONG).show();
+        };
+        handler.postDelayed(requestTimeout, OTP_REQUEST_TIMEOUT_MS);
+    }
+
+    private void cancelRequestTimeout() {
+        if (requestTimeout != null) {
+            handler.removeCallbacks(requestTimeout);
+            requestTimeout = null;
+        }
     }
 
     private void setLoading(boolean isLoading) {
