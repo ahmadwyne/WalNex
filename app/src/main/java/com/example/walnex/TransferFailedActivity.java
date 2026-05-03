@@ -3,7 +3,9 @@ package com.example.walnex;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,9 +16,7 @@ import androidx.core.view.WindowInsetsCompat;
 /**
  * "Transfer Failed" error screen.
  *
- * Shown when {@link WalletManager#debitBalance} throws
- * {@link WalletManager.InsufficientFundsException} or any other unexpected
- * exception during a local transfer attempt.
+ * Shown when a transfer attempt fails (insufficient funds or unexpected error).
  *
  * Pressing "Back to wallet" navigates back to {@link HomeActivity}.
  */
@@ -46,6 +46,12 @@ public class TransferFailedActivity extends AppCompatActivity {
                     v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
                     return insets;
                 });
+
+        TextView reasonView = findViewById(R.id.textTransferFailedReason);
+        String reason = getIntent().getStringExtra(EXTRA_REASON);
+        if (reasonView != null && !TextUtils.isEmpty(reason)) {
+            reasonView.setText(reason);
+        }
 
         // "Back to wallet" clears the stack and goes Home
         Button btnBack = findViewById(R.id.btnBackToWallet);

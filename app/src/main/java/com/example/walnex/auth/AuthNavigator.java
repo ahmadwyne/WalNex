@@ -7,6 +7,7 @@ import android.text.TextUtils;
 import com.example.walnex.HomeActivity;
 import com.example.walnex.ProfileSetupActivity;
 import com.example.walnex.WelcomeActivity;
+import com.example.walnex.wallet.WalletDefaults;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -76,6 +77,8 @@ public final class AuthNavigator {
 
         firestore.collection("users").document(uid).set(fallbackUserPatch, SetOptions.merge());
 
+        ensureWalletExists(firestore, uid);
+
         Map<String, Object> bootstrapPayload = new HashMap<>();
         if (!TextUtils.isEmpty(phoneE164)) {
             bootstrapPayload.put("phoneE164", phoneE164);
@@ -86,6 +89,29 @@ public final class AuthNavigator {
         } catch (RuntimeException ignored) {
             // App still works in local/dev setups where callable functions are not deployed yet.
         }
+    }
+
+    private static void ensureWalletExists(FirebaseFirestore firestore, String uid) {
+        firestore.collection("wallets").document(uid).get()
+            .addOnSuccessListener(snapshot -> {
+                Double balance = snapshot.getDouble("balance");
+                String currency = snapshot.getString("currency");
+                if (snapshot.exists() && balance != null && !TextUtils.isEmpty(currency)) {
+                    return;
+                }
+
+                Map<String, Object> wallet = new HashMap<>();
+                wallet.put("balance", balance != null
+                    ? balance
+                    : WalletDefaults.DEFAULT_BALANCE);
+                wallet.put("currency", !TextUtils.isEmpty(currency)
+                    ? currency
+                    : WalletDefaults.DEFAULT_CURRENCY);
+                wallet.put("updatedAt", FieldValue.serverTimestamp());
+
+                firestore.collection("wallets").document(uid)
+                    .set(wallet, SetOptions.merge());
+            });
     }
 
     private static boolean isProfileComplete(DocumentSnapshot snapshot) {

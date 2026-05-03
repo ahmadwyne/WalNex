@@ -20,25 +20,23 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.walnex.transfer.TransferContact;
-// import com.example.walnex.transfer.TransferRepository;  // [FIREBASE DISABLED]
+import com.example.walnex.transfer.TransferRepository;
+import com.example.walnex.wallet.WalletDefaults;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.button.MaterialButton;
-// import com.google.firebase.auth.FirebaseAuth;            // [FIREBASE DISABLED]
+import com.google.firebase.auth.FirebaseAuth;
 
 import android.widget.Button;
 import android.widget.LinearLayout;
 
-import java.util.UUID;
-
 /**
  * Amount-entry screen shown after the user picks a contact.
- *
- * Firebase / Firestore calls have been commented out and replaced with
- * a local SharedPreferences-backed wallet via {@link WalletManager}.
  *
  * Layout flow:
  *   1. Numeric keypad visible → user enters amount → presses "Done"
  *   2. Keypad slides down, "Secure Payment" button slides up
- *   3. User presses "Secure Payment" → local balance debit via WalletManager
+ *   3. User presses "Secure Payment" → Firestore transfer transaction
  *   4. On success  → PaymentDoneActivity
  *      On failure  → TransferFailedActivity
  */
@@ -49,7 +47,7 @@ public class TransferToUserActivity extends AppCompatActivity {
     private static final String EXTRA_PHONE  = "extra_recipient_phone";
     private static final String EXTRA_AVATAR = "extra_recipient_avatar";
 
-    private static final String CURRENCY = "PKR";
+    private static final String CURRENCY = WalletDefaults.DEFAULT_CURRENCY;
 
     // ── Factory ───────────────────────────────────────────────────────────────
 
@@ -242,88 +240,91 @@ public class TransferToUserActivity extends AppCompatActivity {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    //  Secure Payment → local SharedPreferences wallet transaction
-    //
-    //  [FIREBASE DISABLED]
-    //  The original Firestore atomic transaction below has been replaced with
-    //  a synchronous local debit via WalletManager. Re-enable the Firestore
-    //  path by un-commenting TransferRepository.submitTransfer() and removing
-    //  the WalletManager block.
+    //  Secure Payment → Firestore atomic transaction
     // ──────────────────────────────────────────────────────────────────────────
 
     private void onSecurePayPressed() {
         double amount = parseAmount();
         if (amount <= 0) return;
 
-        // ── [FIREBASE DISABLED] Original sign-in check ─────────────────────
-        // if (FirebaseAuth.getInstance().getCurrentUser() == null) {
-        //     Toast.makeText(this, R.string.transfer_not_signed_in, Toast.LENGTH_SHORT).show();
-        //     return;
-        // }
-        // ──────────────────────────────────────────────────────────────────────
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            Toast.makeText(this, R.string.transfer_not_signed_in, Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         // Prevent double-taps
         layoutSecurePay.setEnabled(false);
 
-        // ── [FIREBASE DISABLED] Original Firestore transaction ─────────────
-        // TransferRepository.submitTransfer(recipient, amount, CURRENCY)
-        //         .addOnSuccessListener(txId -> { ... })
-        //         .addOnFailureListener(e -> { ... });
-        // ──────────────────────────────────────────────────────────────────────
+        resolveRecipientForTransfer()
+            .addOnSuccessListener(resolved -> {
+                if (resolved == null) {
+                    layoutSecurePay.setEnabled(true);
+                    showKeypadAgain();
+                    startActivity(TransferFailedActivity.newIntent(
+                        this,
+                        getString(R.string.transfer_recipient_not_found)
+                    ));
+                    return;
+                }
 
-        // ── LOCAL WALLET TRANSACTION (SharedPreferences) ───────────────────
-        String txId = UUID.randomUUID().toString().replace("-", "").substring(0, 14);
+                recipient = resolved;
 
-        try {
-            // 1. Debit sender balance (throws InsufficientFundsException if broke)
-            WalletManager.debitBalance(this, amount);
+                TransferRepository.submitTransfer(resolved, amount, CURRENCY)
+                    .addOnSuccessListener(txId -> {
+                        String recipientLabel = !TextUtils.isEmpty(resolved.fullName)
+                            ? resolved.fullName
+                            : resolved.phoneE164;
+                        Intent successIntent = new Intent(this, PaymentDoneActivity.class);
+                        successIntent.putExtra("extra_pd_recipient_name", recipientLabel);
+                        successIntent.putExtra("extra_pd_amount",         amount);
+                        successIntent.putExtra("extra_pd_currency",       CURRENCY);
+                        successIntent.putExtra("extra_pd_tx_id",          txId);
+                        startActivity(successIntent);
+                        finish();
+                    })
+                    .addOnFailureListener(e -> {
+                        layoutSecurePay.setEnabled(true);
+                        showKeypadAgain();
 
-            // 2. Record as a local transfer transaction
-            WalletManager.pushTransaction(this,
-                    new WalletManager.LocalTransaction(
-                            recipient.fullName,
-                            "Transfer",
-                            false,               // debit
-                            amount,
-                            CURRENCY,
-                            System.currentTimeMillis(),
-                            txId));
+                        String reason = e instanceof TransferRepository.InsufficientFundsException
+                            ? getString(R.string.transfer_insufficient_funds)
+                            : "Transfer failed: " + e.getLocalizedMessage();
 
-            // 3. Update recent-transfers list (shown on Home screen)
-            WalletManager.pushRecentTransfer(this,
-                    new WalletManager.RecentTransfer(
-                            recipient.fullName,
-                            recipient.phoneE164,
-                            recipient.avatarRes));
+                        startActivity(TransferFailedActivity.newIntent(this, reason));
+                    });
+            })
+            .addOnFailureListener(e -> {
+                layoutSecurePay.setEnabled(true);
+                showKeypadAgain();
+                String message = e.getLocalizedMessage();
+                String reason = TextUtils.isEmpty(message)
+                    ? getString(R.string.transfer_failed)
+                    : "Recipient lookup failed: " + message;
+                startActivity(TransferFailedActivity.newIntent(this, reason));
+            });
+    }
 
-            // 4. Navigate to success screen
-            Intent successIntent = new Intent(this, PaymentDoneActivity.class);
-            successIntent.putExtra("extra_pd_recipient_name", recipient.fullName);
-            successIntent.putExtra("extra_pd_amount",         amount);
-            successIntent.putExtra("extra_pd_currency",       CURRENCY);
-            successIntent.putExtra("extra_pd_tx_id",          txId);
-            startActivity(successIntent);
-            finish();
-
-        } catch (WalletManager.InsufficientFundsException e) {
-            // Re-enable the button so the user can adjust the amount
-            layoutSecurePay.setEnabled(true);
-
-            // Navigate to the dedicated failure screen
-            Intent failIntent = new Intent(this, TransferFailedActivity.class);
-            failIntent.putExtra("extra_tf_reason",
-                    "Insufficient balance. Please top up your wallet.");
-            startActivity(failIntent);
-            // Don't finish — let the user go back and try again
-
-        } catch (Exception e) {
-            layoutSecurePay.setEnabled(true);
-            Intent failIntent = new Intent(this, TransferFailedActivity.class);
-            failIntent.putExtra("extra_tf_reason",
-                    "Transfer failed: " + e.getLocalizedMessage());
-            startActivity(failIntent);
+    private Task<TransferContact> resolveRecipientForTransfer() {
+        if (recipient == null) {
+            return Tasks.forResult(null);
         }
-        // ──────────────────────────────────────────────────────────────────────
+        if (!TextUtils.isEmpty(recipient.uid)) {
+            return TransferRepository.findContactByUid(recipient.uid)
+                .continueWithTask(task -> {
+                    TransferContact byUid = task.isSuccessful() ? task.getResult() : null;
+                    if (byUid != null) {
+                        return Tasks.forResult(byUid);
+                    }
+                    if (TextUtils.isEmpty(recipient.phoneE164)) {
+                        return Tasks.forResult(null);
+                    }
+                    return TransferRepository.findContactByPhone(recipient.phoneE164);
+                });
+        }
+        if (TextUtils.isEmpty(recipient.phoneE164)) {
+            return Tasks.forResult(null);
+        }
+        return TransferRepository.findContactByPhone(recipient.phoneE164);
     }
 
     /**

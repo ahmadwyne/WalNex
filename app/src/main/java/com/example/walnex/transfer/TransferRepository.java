@@ -7,6 +7,7 @@ import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.example.walnex.wallet.WalletDefaults;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
@@ -19,6 +20,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +30,7 @@ import java.util.Set;
  * Single source of truth for all transfer-feature backend operations.
  *
  * Running on the Firebase Spark (free) tier — no Cloud Functions available.
- * Transfer logic is executed as a client-side Firestore transaction:
+ * Transfer logic is executed as a client-side Firestore transaction (demo mode):
  *   1. Read sender wallet balance.
  *   2. Validate sufficient funds.
  *   3. Atomically debit sender, credit recipient, and write both ledger entries.
@@ -48,7 +50,7 @@ public final class TransferRepository {
     // ── Submit transfer (client-side atomic Firestore transaction) ────────────
 
     /**
-     * Transfers money atomically without a Cloud Function:
+     * Demo-mode transfer without a Cloud Function:
      *
      *  1. Reads the sender's wallet balance inside a transaction.
      *  2. Throws {@link InsufficientFundsException} and rolls back if underfunded.
@@ -70,27 +72,34 @@ public final class TransferRepository {
             return Tasks.forException(new IllegalStateException("Not signed in"));
         }
 
+        if (recipient == null || TextUtils.isEmpty(recipient.uid)) {
+            return Tasks.forException(new IllegalArgumentException("Recipient missing"));
+        }
+
+        if (recipient.uid.equals(sender.getUid())) {
+            return Tasks.forException(new IllegalArgumentException("Cannot transfer to yourself"));
+        }
+
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // Wallet refs
-        DocumentReference senderWalletRef    = db.collection(COL_WALLETS).document(sender.getUid());
+        // Sender + recipient refs
+        DocumentReference senderWalletRef = db.collection(COL_WALLETS).document(sender.getUid());
         DocumentReference recipientWalletRef = db.collection(COL_WALLETS).document(recipient.uid);
-
-        // Pre-generate a shared transaction ID so both ledger entries are linked
+        DocumentReference senderUserRef = db.collection(COL_USERS).document(sender.getUid());
         DocumentReference senderTxRef = db
-                .collection(COL_USERS).document(sender.getUid())
-                .collection(COL_TRANSACTIONS).document();         // auto-ID
+            .collection(COL_USERS).document(sender.getUid())
+            .collection(COL_TRANSACTIONS).document();
         final String txId = senderTxRef.getId();
 
         DocumentReference recipientTxRef = db
-                .collection(COL_USERS).document(recipient.uid)
-                .collection(COL_TRANSACTIONS).document(txId);    // same ID
+            .collection(COL_USERS).document(recipient.uid)
+            .collection(COL_TRANSACTIONS).document(txId);
 
         return db.runTransaction(transaction -> {
 
             // 1. Read sender wallet
             DocumentSnapshot senderWallet = transaction.get(senderWalletRef);
-            double currentBalance = 0;
+            double currentBalance = WalletDefaults.DEFAULT_BALANCE;
             if (senderWallet.exists()) {
                 Double b = senderWallet.getDouble("balance");
                 if (b != null) currentBalance = b;
@@ -105,26 +114,69 @@ public final class TransferRepository {
 
             // 3. Read recipient wallet (needed to compute new balance)
             DocumentSnapshot recipientWallet = transaction.get(recipientWalletRef);
-            double recipientBalance = 0;
+            double recipientBalance = WalletDefaults.DEFAULT_BALANCE;
             if (recipientWallet.exists()) {
                 Double b = recipientWallet.getDouble("balance");
                 if (b != null) recipientBalance = b;
             }
 
-            // 4. Build shared ledger payload (status = success, no pending step needed)
+            // 4. Read sender profile (for receipt metadata)
+            DocumentSnapshot senderProfile = transaction.get(senderUserRef);
+            String senderName = senderProfile.getString("fullName");
+            String senderPhone = senderProfile.getString("phoneE164");
+            if (TextUtils.isEmpty(senderName)) {
+                senderName = !TextUtils.isEmpty(sender.getPhoneNumber())
+                    ? sender.getPhoneNumber()
+                    : sender.getUid();
+            }
+            if (TextUtils.isEmpty(senderPhone)) {
+                senderPhone = sender.getPhoneNumber();
+            }
+
+            String recipientName = recipient.fullName;
+            String recipientPhone = recipient.phoneE164;
+            if (TextUtils.isEmpty(recipientName)) {
+                recipientName = !TextUtils.isEmpty(recipientPhone)
+                    ? recipientPhone
+                    : "Recipient";
+            }
+
+            // 5. Build shared ledger payload (status = success)
             Map<String, Object> txPayload = TransferRecord.newSuccessPayload(
                     sender.getUid(),
+                    senderName,
+                    senderPhone,
                     recipient.uid,
-                    recipient.phoneE164,
-                    recipient.fullName,
+                    recipientPhone,
+                    recipientName,
                     amount,
                     currency,
                     txId);
 
-            // 5. Apply all writes atomically
-            transaction.update(senderWalletRef,    "balance", currentBalance - amount);
-            transaction.update(recipientWalletRef, "balance", recipientBalance + amount);
-            transaction.set(senderTxRef,    txPayload);
+            // 6. Apply writes atomically
+            Map<String, Object> senderWalletUpdate = new HashMap<>();
+            senderWalletUpdate.put("balance", currentBalance - amount);
+            senderWalletUpdate.put("currency", currency);
+            senderWalletUpdate.put("updatedAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
+
+            Map<String, Object> recipientWalletUpdate = new HashMap<>();
+            recipientWalletUpdate.put("balance", recipientBalance + amount);
+            recipientWalletUpdate.put("currency", currency);
+            recipientWalletUpdate.put("updatedAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
+
+            if (senderWallet.exists()) {
+                transaction.update(senderWalletRef, senderWalletUpdate);
+            } else {
+                transaction.set(senderWalletRef, senderWalletUpdate);
+            }
+
+            if (recipientWallet.exists()) {
+                transaction.update(recipientWalletRef, recipientWalletUpdate);
+            } else {
+                transaction.set(recipientWalletRef, recipientWalletUpdate);
+            }
+
+            transaction.set(senderTxRef, txPayload);
             transaction.set(recipientTxRef, txPayload);
 
             return txId;
@@ -235,6 +287,7 @@ public final class TransferRepository {
     public static Task<List<TransferContact>> loadFrequentContacts() {
         FirebaseUser me = FirebaseAuth.getInstance().getCurrentUser();
         if (me == null) return Tasks.forResult(Collections.emptyList());
+        String myUid = me.getUid();
 
         return FirebaseFirestore.getInstance()
                 .collection(COL_USERS).document(me.getUid())
@@ -248,18 +301,43 @@ public final class TransferRepository {
                     if (!task.isSuccessful() || task.getResult() == null) {
                         return Tasks.forResult(Collections.emptyList());
                     }
-                    List<String> orderedUids = new ArrayList<>();
+
+                    List<TransferContact> contacts = new ArrayList<>();
+                    Set<String> seen = new HashSet<>();
+
                     for (QueryDocumentSnapshot doc : task.getResult()) {
-                        String uid = doc.getString(TransferRecord.FIELD_RECIPIENT_UID);
-                        if (!TextUtils.isEmpty(uid) && !orderedUids.contains(uid)) {
-                            orderedUids.add(uid);
-                            if (orderedUids.size() == MAX_FREQUENT) break;
+                        String senderUid = doc.getString(TransferRecord.FIELD_SENDER_UID);
+                        String recipientUid = doc.getString(TransferRecord.FIELD_RECIPIENT_UID);
+                        if (TextUtils.isEmpty(senderUid) || TextUtils.isEmpty(recipientUid)) {
+                            continue;
+                        }
+
+                        boolean isSender = myUid.equals(senderUid);
+                        String counterpartyUid = isSender ? recipientUid : senderUid;
+                        if (seen.contains(counterpartyUid)) {
+                            continue;
+                        }
+
+                        String name = isSender
+                            ? doc.getString(TransferRecord.FIELD_RECIPIENT_NAME)
+                            : doc.getString(TransferRecord.FIELD_SENDER_NAME);
+                        String phone = isSender
+                            ? doc.getString(TransferRecord.FIELD_RECIPIENT_PHONE)
+                            : doc.getString(TransferRecord.FIELD_SENDER_PHONE);
+
+                        if (TextUtils.isEmpty(name)) {
+                            name = !TextUtils.isEmpty(phone) ? phone : counterpartyUid;
+                        }
+
+                        contacts.add(new TransferContact(counterpartyUid, name, phone != null ? phone : "", 0));
+                        seen.add(counterpartyUid);
+
+                        if (contacts.size() == MAX_FREQUENT) {
+                            break;
                         }
                     }
-                    if (orderedUids.isEmpty()) return Tasks.forResult(Collections.emptyList());
-                    List<Task<TransferContact>> fetches = new ArrayList<>();
-                    for (String uid : orderedUids) fetches.add(fetchContactByUid(uid));
-                    return Tasks.whenAllSuccess(fetches);
+
+                    return Tasks.forResult(contacts);
                 });
     }
 
@@ -276,6 +354,24 @@ public final class TransferRepository {
                             (QueryDocumentSnapshot) task.getResult().getDocuments().get(0));
                 });
     }
+
+        public static Task<TransferContact> findContactByUid(String uid) {
+        if (TextUtils.isEmpty(uid)) return Tasks.forResult(null);
+        return FirebaseFirestore.getInstance()
+            .collection(COL_USERS).document(uid).get()
+            .continueWith(task -> {
+                if (!task.isSuccessful() || task.getResult() == null
+                    || !task.getResult().exists()) return null;
+                String fullName = task.getResult().getString("fullName");
+                if (TextUtils.isEmpty(fullName)) return null;
+                String phone = task.getResult().getString("phoneE164");
+                return new TransferContact(
+                    task.getResult().getId(),
+                    fullName,
+                    phone != null ? phone : "",
+                    0);
+            });
+        }
 
     // ── Private helpers ───────────────────────────────────────────────────────
 

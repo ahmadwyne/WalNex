@@ -23,8 +23,57 @@ service cloud.firestore {
       ]);
     }
 
+    function walletFieldsValid() {
+      return request.resource.data.keys().hasOnly([
+        'balance',
+        'currency',
+        'updatedAt'
+      ])
+      && request.resource.data.balance is number
+      && request.resource.data.currency is string
+      && request.resource.data.updatedAt is timestamp;
+    }
+
+    function txFieldsValid() {
+      return request.resource.data.keys().hasOnly([
+        'txId',
+        'senderUid',
+        'senderName',
+        'senderPhone',
+        'recipientUid',
+        'recipientPhone',
+        'recipientName',
+        'amount',
+        'currency',
+        'status',
+        'type',
+        'createdAt'
+      ])
+      && request.resource.data.txId is string
+      && request.resource.data.senderUid is string
+      && request.resource.data.recipientUid is string
+      && request.resource.data.amount is number
+      && request.resource.data.currency is string
+      && request.resource.data.status is string
+      && request.resource.data.type is string
+      && (!('senderName' in request.resource.data)
+        || request.resource.data.senderName is string
+        || request.resource.data.senderName == null)
+      && (!('senderPhone' in request.resource.data)
+        || request.resource.data.senderPhone is string
+        || request.resource.data.senderPhone == null)
+      && (!('recipientName' in request.resource.data)
+        || request.resource.data.recipientName is string
+        || request.resource.data.recipientName == null)
+      && (!('recipientPhone' in request.resource.data)
+        || request.resource.data.recipientPhone is string
+        || request.resource.data.recipientPhone == null)
+      && (!('createdAt' in request.resource.data)
+        || request.resource.data.createdAt is timestamp);
+    }
+
     match /users/{uid} {
-      allow read: if isSelf(uid);
+      allow read: if isSignedIn();
 
       allow create: if isSelf(uid)
         && userFieldsValid()
@@ -51,8 +100,15 @@ service cloud.firestore {
     }
 
     match /wallets/{uid} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && walletFieldsValid();
+      allow delete: if false;
+    }
+
+    match /users/{uid}/transactions/{txId} {
       allow read: if isSelf(uid);
-      allow write: if false;
+      allow create: if isSignedIn() && txFieldsValid();
+      allow update, delete: if false;
     }
 
     match /ledger/{uid}/entries/{entryId} {

@@ -45,6 +45,7 @@ public class PhoneAuthActivity extends AppCompatActivity {
     private static final String TAG = "PhoneAuthActivity";
     private static final String DEFAULT_DIAL_CODE = "+962";
     private static final long OTP_REQUEST_TIMEOUT_MS = 25000L;
+    private static final boolean FORCE_OTP_ENTRY = true;
 
     public static Intent newIntent(Context context, String flowMode) {
         Intent intent = new Intent(context, PhoneAuthActivity.class);
@@ -140,6 +141,9 @@ public class PhoneAuthActivity extends AppCompatActivity {
         callbacks = new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
             @Override
             public void onVerificationCompleted(@NonNull PhoneAuthCredential credential) {
+                if (FORCE_OTP_ENTRY) {
+                    return;
+                }
                 cancelRequestTimeout();
                 signInWithCredential(credential);
             }

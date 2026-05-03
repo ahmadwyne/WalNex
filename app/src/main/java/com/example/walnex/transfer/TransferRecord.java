@@ -21,6 +21,8 @@ public class TransferRecord {
 
     // Firestore field name constants
     public static final String FIELD_SENDER_UID      = "senderUid";
+    public static final String FIELD_SENDER_NAME     = "senderName";
+    public static final String FIELD_SENDER_PHONE    = "senderPhone";
     public static final String FIELD_RECIPIENT_UID   = "recipientUid";
     public static final String FIELD_RECIPIENT_PHONE = "recipientPhone";
     public static final String FIELD_RECIPIENT_NAME  = "recipientName";
@@ -39,6 +41,8 @@ public class TransferRecord {
     // ── Instance fields (used when reading back from Firestore) ──────────────
 
     public String senderUid;
+    public String senderName;
+    public String senderPhone;
     public String recipientUid;
     public String recipientPhone;
     public String recipientName;
@@ -67,6 +71,8 @@ public class TransferRecord {
      */
     public static Map<String, Object> newSuccessPayload(
             String senderUid,
+            String senderName,
+            String senderPhone,
             String recipientUid,
             String recipientPhone,
             String recipientName,
@@ -77,6 +83,8 @@ public class TransferRecord {
         Map<String, Object> map = new HashMap<>();
         map.put(FIELD_TX_ID,           txId);
         map.put(FIELD_SENDER_UID,      senderUid);
+        map.put(FIELD_SENDER_NAME,     senderName);
+        map.put(FIELD_SENDER_PHONE,    senderPhone);
         map.put(FIELD_RECIPIENT_UID,   recipientUid);
         map.put(FIELD_RECIPIENT_PHONE, recipientPhone);
         map.put(FIELD_RECIPIENT_NAME,  recipientName);

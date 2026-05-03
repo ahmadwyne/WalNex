@@ -21,21 +21,33 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.example.walnex.auth.AuthFlow;
 import com.example.walnex.auth.AuthLocalStore;
 import com.example.walnex.auth.AuthNavigator;
-import com.example.walnex.transfer.TransferContact;
+import com.example.walnex.transfer.TransferRecord;
+import com.example.walnex.wallet.WalletDefaults;
+import com.google.firebase.Timestamp;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.SetOptions;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public class HomeActivity extends AppCompatActivity {
+
+    private static final int HOME_RECENT_LIMIT = 6;
+    private static final int HOME_TX_LIMIT = 6;
 
     // ──────────────────────────────────────────────────────────────────────────
     //  Inner model classes
@@ -112,8 +124,8 @@ public class HomeActivity extends AppCompatActivity {
     /**
      * Called every time this activity returns to the foreground
      * (e.g. after the user finishes a transfer and is sent back here).
-     * Refreshes balance and the recent-transfers / transactions lists so
-     * changes from WalletManager are always visible without a full restart.
+        * Refreshes balance and the recent-transfers / transactions lists so
+        * Firestore updates are reflected without a full restart.
      */
     @Override
     protected void onResume() {
@@ -167,19 +179,53 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    //  Balance  ← now reads from WalletManager (SharedPreferences)
+    //  Balance  ← now reads from Firestore
     // ──────────────────────────────────────────────────────────────────────────
 
     private void bindBalance() {
-        // [FIREBASE DISABLED] — replaced hardcoded value with WalletManager read
-        // double balance = 14235.34;  // ← old hardcoded value
-        double balance = WalletManager.getBalance(this);
-        bindBalanceViews(balance);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            AuthLocalStore.clear(this);
+            AuthNavigator.openWelcome(this);
+            return;
+        }
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("wallets")
+            .document(user.getUid())
+            .get()
+            .addOnSuccessListener(snapshot -> {
+                Double balance = snapshot.getDouble("balance");
+                String currency = snapshot.getString("currency");
+
+                double resolvedBalance = balance != null
+                    ? balance
+                    : WalletDefaults.DEFAULT_BALANCE;
+                String resolvedCurrency = !TextUtils.isEmpty(currency)
+                    ? currency
+                    : WalletDefaults.DEFAULT_CURRENCY;
+
+                if (!snapshot.exists() || balance == null || TextUtils.isEmpty(currency)) {
+                    Map<String, Object> walletPatch = new HashMap<>();
+                    walletPatch.put("balance", resolvedBalance);
+                    walletPatch.put("currency", resolvedCurrency);
+                    walletPatch.put("updatedAt", FieldValue.serverTimestamp());
+                    db.collection("wallets")
+                        .document(user.getUid())
+                        .set(walletPatch, SetOptions.merge());
+                }
+
+                bindBalanceViews(resolvedBalance, resolvedCurrency);
+            })
+            .addOnFailureListener(error ->
+                bindBalanceViews(WalletDefaults.DEFAULT_BALANCE, WalletDefaults.DEFAULT_CURRENCY)
+            );
     }
 
-    private void bindBalanceViews(double balance) {
+    private void bindBalanceViews(double balance, String currency) {
         TextView textWhole   = findViewById(R.id.textBalanceWhole);
         TextView textDecimal = findViewById(R.id.textBalanceDecimal);
+        TextView textCurrency = findViewById(R.id.textBalanceCurrency);
 
         if (textWhole == null || textDecimal == null) return;
 
@@ -189,6 +235,10 @@ public class HomeActivity extends AppCompatActivity {
         NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
         textWhole.setText(nf.format(wholePart));
         textDecimal.setText(String.format(Locale.US, ".%02d", decimalPart));
+
+        if (textCurrency != null && !TextUtils.isEmpty(currency)) {
+            textCurrency.setText(currency);
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -263,28 +313,48 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    //  Recent transfers  ← now reads from WalletManager first, then falls back
-    //                      to the static demo list if no transfers exist yet.
+    //  Recent transfers  ← now reads from Firestore
     // ──────────────────────────────────────────────────────────────────────────
 
     private void loadRecentTransfers() {
-        List<WalletManager.RecentTransfer> saved = WalletManager.getRecentTransfers(this);
-
-        List<Recipient> recipients = new ArrayList<>();
-
-        if (!saved.isEmpty()) {
-            // Prefer the live WalletManager data (most-recent first)
-            for (WalletManager.RecentTransfer r : saved) {
-                recipients.add(new Recipient(r.name, r.avatarRes));
-            }
-        } else {
-            // Fall back to static demo contacts on first launch
-            recipients.add(new Recipient("Ali",   0));
-            recipients.add(new Recipient("Steve", 0));
-            recipients.add(new Recipient("Ahmed", 0));
-            recipients.add(new Recipient("Nadia", 0));
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            AuthLocalStore.clear(this);
+            AuthNavigator.openWelcome(this);
+            return;
         }
 
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(user.getUid())
+            .collection("transactions")
+            .orderBy(TransferRecord.FIELD_CREATED_AT, Query.Direction.DESCENDING)
+            .limit(HOME_RECENT_LIMIT)
+            .get()
+            .addOnSuccessListener(snapshot -> {
+                List<Recipient> recipients = new ArrayList<>();
+                Set<String> seen = new HashSet<>();
+                for (QueryDocumentSnapshot doc : snapshot) {
+                    String counterpartyUid = resolveCounterpartyUid(doc, user.getUid());
+                    if (TextUtils.isEmpty(counterpartyUid) || seen.contains(counterpartyUid)) {
+                        continue;
+                    }
+                    String counterpartyName = resolveCounterpartyName(doc, user.getUid());
+                    if (TextUtils.isEmpty(counterpartyName)) {
+                        counterpartyName = counterpartyUid;
+                    }
+                    recipients.add(new Recipient(counterpartyName, 0));
+                    seen.add(counterpartyUid);
+                    if (recipients.size() >= HOME_RECENT_LIMIT) {
+                        break;
+                    }
+                }
+                renderRecentTransfers(recipients);
+            })
+            .addOnFailureListener(error -> renderRecentTransfers(new ArrayList<>()));
+    }
+
+    private void renderRecentTransfers(List<Recipient> recipients) {
         LayoutInflater inflater = LayoutInflater.from(this);
         for (Recipient recipient : recipients) {
             View itemView = inflater.inflate(
@@ -309,49 +379,38 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    //  Latest transactions  ← merges WalletManager local records with the
-    //                         static demo list, always newest first.
+    //  Latest transactions  ← Firestore query (newest first)
     // ──────────────────────────────────────────────────────────────────────────
 
     private void loadLatestTransactions() {
-        long now = System.currentTimeMillis();
-
-        // --- Static demo transactions (existing hardcoded data) ---------------
-        List<Transaction> txList = new ArrayList<>();
-
-        // Pull in any locally stored transfers first (most-recent first)
-        List<WalletManager.LocalTransaction> localTxs = WalletManager.getRecentTransactions(this);
-        for (WalletManager.LocalTransaction lt : localTxs) {
-            txList.add(new Transaction(
-                    lt.merchantName,
-                    lt.merchantType,
-                    R.drawable.ic_tx_generic,   // use generic icon for transfers
-                    lt.isCredit,
-                    lt.amount,
-                    lt.currency,
-                    lt.timestampMs,
-                    lt.txId));
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            AuthLocalStore.clear(this);
+            AuthNavigator.openWelcome(this);
+            return;
         }
 
-        // Append static demo entries below the live ones
-        txList.add(new Transaction(
-                "Walmart", "Retailer corporation",
-                R.drawable.ic_tx_generic,
-                false, 35.23, "PKR",
-                now, "23010412432431"));
-        txList.add(new Transaction(
-                "Top up", "Wallet top‑up",
-                R.drawable.ic_topup,
-                true, 430.00, "PKR",
-                now - (24L * 60 * 60 * 1000 + 2 * 60 * 60 * 1000 + 12 * 60 * 1000),
-                "23010412432432"));
-        txList.add(new Transaction(
-                "Netflix", "Subscription",
-                R.drawable.ic_tx_generic,
-                false, 13.00, "PKR",
-                now - (5L * 24 * 60 * 60 * 1000),
-                "23010412432433"));
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(user.getUid())
+            .collection("transactions")
+            .orderBy(TransferRecord.FIELD_CREATED_AT, Query.Direction.DESCENDING)
+            .limit(HOME_TX_LIMIT)
+            .get()
+            .addOnSuccessListener(snapshot -> {
+                List<Transaction> txList = new ArrayList<>();
+                for (QueryDocumentSnapshot doc : snapshot) {
+                    Transaction tx = mapTransferTransaction(doc, user.getUid());
+                    if (tx != null) {
+                        txList.add(tx);
+                    }
+                }
+                renderTransactions(txList);
+            })
+            .addOnFailureListener(error -> renderTransactions(new ArrayList<>()));
+    }
 
+    private void renderTransactions(List<Transaction> txList) {
         LayoutInflater inflater = LayoutInflater.from(this);
         for (int i = 0; i < txList.size(); i++) {
             Transaction tx = txList.get(i);
@@ -361,7 +420,6 @@ public class HomeActivity extends AppCompatActivity {
             rowView.setOnClickListener(v -> showTransactionDetail(tx));
             layoutTransactions.addView(rowView);
 
-            // Thin divider between rows (except after last)
             if (i < txList.size() - 1) {
                 View divider = new View(this);
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
@@ -372,6 +430,70 @@ public class HomeActivity extends AppCompatActivity {
                 layoutTransactions.addView(divider);
             }
         }
+    }
+
+    private Transaction mapTransferTransaction(QueryDocumentSnapshot doc, String myUid) {
+        Double amount = doc.getDouble(TransferRecord.FIELD_AMOUNT);
+        if (amount == null) {
+            return null;
+        }
+
+        String senderUid = doc.getString(TransferRecord.FIELD_SENDER_UID);
+        boolean isCredit = senderUid == null || !senderUid.equals(myUid);
+
+        String counterparty = resolveCounterpartyName(doc, myUid);
+        if (TextUtils.isEmpty(counterparty)) {
+            counterparty = getString(R.string.home_action_transfer);
+        }
+
+        String currency = doc.getString(TransferRecord.FIELD_CURRENCY);
+        if (TextUtils.isEmpty(currency)) {
+            currency = WalletDefaults.DEFAULT_CURRENCY;
+        }
+
+        Timestamp timestamp = doc.getTimestamp(TransferRecord.FIELD_CREATED_AT);
+        long timestampMs = timestamp != null
+            ? timestamp.toDate().getTime()
+            : System.currentTimeMillis();
+
+        String txId = doc.getString(TransferRecord.FIELD_TX_ID);
+        if (TextUtils.isEmpty(txId)) {
+            txId = doc.getId();
+        }
+
+        return new Transaction(
+            counterparty,
+            getString(R.string.home_action_transfer),
+            R.drawable.ic_tx_generic,
+            isCredit,
+            amount,
+            currency,
+            timestampMs,
+            txId
+        );
+    }
+
+    private String resolveCounterpartyUid(QueryDocumentSnapshot doc, String myUid) {
+        String senderUid = doc.getString(TransferRecord.FIELD_SENDER_UID);
+        String recipientUid = doc.getString(TransferRecord.FIELD_RECIPIENT_UID);
+        if (TextUtils.isEmpty(senderUid) || TextUtils.isEmpty(recipientUid)) {
+            return null;
+        }
+        return myUid.equals(senderUid) ? recipientUid : senderUid;
+    }
+
+    private String resolveCounterpartyName(QueryDocumentSnapshot doc, String myUid) {
+        String senderUid = doc.getString(TransferRecord.FIELD_SENDER_UID);
+        boolean isSender = senderUid != null && senderUid.equals(myUid);
+        String name = isSender
+            ? doc.getString(TransferRecord.FIELD_RECIPIENT_NAME)
+            : doc.getString(TransferRecord.FIELD_SENDER_NAME);
+        if (!TextUtils.isEmpty(name)) {
+            return name;
+        }
+        return isSender
+            ? doc.getString(TransferRecord.FIELD_RECIPIENT_PHONE)
+            : doc.getString(TransferRecord.FIELD_SENDER_PHONE);
     }
 
     private void bindTransactionRow(View rowView, Transaction tx) {
