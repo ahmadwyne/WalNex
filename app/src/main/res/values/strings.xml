@@ -43,6 +43,9 @@
     <string name="history_title">History</string>
     <string name="history_search_hint">Enter Value to Search</string>
     <string name="history_filter">Filter</string>
+    <string name="history_filter_all">All</string>
+    <string name="history_filter_in">Money in</string>
+    <string name="history_filter_out">Money out</string>
     <string name="history_empty_title">No transactions yet</string>
     <string name="history_empty_subtitle">Your transaction history will appear here.</string>
     <string name="history_section_today">Today</string>
@@ -54,6 +57,34 @@
     <string name="more_help">Help</string>
     <string name="more_contact_us">Contact us</string>
     <string name="more_about">About</string>
+    <string name="help_title">Help</string>
+    <string name="help_intro">We are here to help with account access, transfers, and common questions. If you need immediate support, reach out to our customer center.</string>
+    <string name="help_center_title">Customer Center</string>
+    <string name="help_center_body">Call our support team for urgent issues, account recovery, or transaction questions.</string>
+    <string name="help_center_phone_label">Phone</string>
+    <string name="help_center_phone">+92 300 1234567</string>
+    <string name="help_call_button">Call customer center</string>
+    <string name="contact_title">Contact us</string>
+    <string name="contact_intro">We love to hear from you. Reach out through any of the options below and we will respond as soon as possible.</string>
+    <string name="contact_phone_label">Phone</string>
+    <string name="contact_phone">+92 300 1234567</string>
+    <string name="contact_email_label">Email</string>
+    <string name="contact_email">support@walnex.app</string>
+    <string name="contact_email_action">Send email</string>
+    <string name="contact_hours_label">Hours</string>
+    <string name="contact_hours">Mon-Sat, 9:00 AM - 6:00 PM</string>
+    <string name="contact_address_label">Office</string>
+    <string name="contact_address">WalNex Support Center, Gulberg, Lahore</string>
+    <string name="about_title">About eWallet</string>
+    <string name="about_body">Our app allows you to easily store, manage, and spend your money on the go. With our secure platform, you can make transactions, check your balance, and track your spending all in one place.</string>
+    <string name="about_body_second">Whether you are paying bills, shopping online, or sending money to friends and family, our app makes it easy and convenient to do so. Plus, with our various promotions and discounts, you can save even more while using our app.</string>
+    <string name="about_faq_title">FAQs</string>
+    <string name="about_faq_q1">How do I add money to my wallet?</string>
+    <string name="about_faq_a1">Use the Top up option on the home screen to add money to your wallet. For the demo, your balance updates immediately.</string>
+    <string name="about_faq_q2">Can I send money to any phone number?</string>
+    <string name="about_faq_a2">Transfers are available to WalNex users only. Make sure the recipient has an active account.</string>
+    <string name="about_faq_q3">What should I do if a transfer fails?</string>
+    <string name="about_faq_a3">Check your balance and network connection, then try again. If the issue persists, contact our support team.</string>
 
     <!-- Cards Screen -->
     <string name="cards_title">My Cards</string>

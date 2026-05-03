@@ -21,6 +21,7 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -48,6 +49,12 @@ import java.util.Locale;
 import java.util.Map;
 
 public class HistoryActivity extends AppCompatActivity {
+
+    private enum FilterMode {
+        ALL,
+        CREDIT,
+        DEBIT
+    }
 
     // ── RecyclerView item types ────────────────────────────────────────────────
     private static final int VIEW_TYPE_HEADER = 0;
@@ -87,6 +94,8 @@ public class HistoryActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private HistoryAdapter adapter;
     private List<HomeActivity.Transaction> allTransactions;
+    private FilterMode filterMode = FilterMode.ALL;
+    private String currentQuery = "";
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -210,29 +219,90 @@ public class HistoryActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterTransactions(s.toString().trim());
+                currentQuery = s.toString().trim();
+                applyFilters();
             }
         });
 
-        // Filter button — show a simple toast for now; hook up a full filter sheet later
-        findViewById(R.id.buttonFilter).setOnClickListener(v ->
-                Toast.makeText(this, "Filter options – coming soon", Toast.LENGTH_SHORT).show());
+        findViewById(R.id.buttonFilter).setOnClickListener(v -> showFilterDialog());
     }
 
     private void filterTransactions(String query) {
-        if (query.isEmpty()) {
-            adapter.updateList(buildFlatList(allTransactions));
-            return;
-        }
-        String lower = query.toLowerCase(Locale.getDefault());
+        currentQuery = query != null ? query : "";
+        applyFilters();
+    }
+
+    private void applyFilters() {
         List<HomeActivity.Transaction> filtered = new ArrayList<>();
+        String lower = currentQuery.toLowerCase(Locale.getDefault());
+
         for (HomeActivity.Transaction tx : allTransactions) {
-            if (tx.merchantName.toLowerCase(Locale.getDefault()).contains(lower)
-                    || tx.merchantType.toLowerCase(Locale.getDefault()).contains(lower)) {
+            if (!matchesFilterMode(tx)) {
+                continue;
+            }
+
+            if (TextUtils.isEmpty(lower)) {
+                filtered.add(tx);
+                continue;
+            }
+
+            String merchant = tx.merchantName != null
+                ? tx.merchantName.toLowerCase(Locale.getDefault())
+                : "";
+            String type = tx.merchantType != null
+                ? tx.merchantType.toLowerCase(Locale.getDefault())
+                : "";
+
+            if (merchant.contains(lower) || type.contains(lower)) {
                 filtered.add(tx);
             }
         }
+
         adapter.updateList(buildFlatList(filtered));
+    }
+
+    private boolean matchesFilterMode(HomeActivity.Transaction tx) {
+        if (filterMode == FilterMode.ALL) return true;
+        if (filterMode == FilterMode.CREDIT) return tx.isCredit;
+        return !tx.isCredit;
+    }
+
+    private void showFilterDialog() {
+        String[] options = new String[] {
+            getString(R.string.history_filter_all),
+            getString(R.string.history_filter_in),
+            getString(R.string.history_filter_out)
+        };
+
+        int checked;
+        switch (filterMode) {
+            case CREDIT:
+                checked = 1;
+                break;
+            case DEBIT:
+                checked = 2;
+                break;
+            case ALL:
+            default:
+                checked = 0;
+                break;
+        }
+
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.history_filter)
+            .setSingleChoiceItems(options, checked, (dialog, which) -> {
+                if (which == 1) {
+                    filterMode = FilterMode.CREDIT;
+                } else if (which == 2) {
+                    filterMode = FilterMode.DEBIT;
+                } else {
+                    filterMode = FilterMode.ALL;
+                }
+                dialog.dismiss();
+                applyFilters();
+            })
+            .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.dismiss())
+            .show();
     }
 
     // ── Nav bar ───────────────────────────────────────────────────────────────
