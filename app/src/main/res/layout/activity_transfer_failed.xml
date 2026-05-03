@@ -90,6 +90,7 @@
 
         <!-- Subtitle -->
         <TextView
+            android:id="@+id/textTransferFailedReason"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Your transfer has been declined\ndue to a technical issue"

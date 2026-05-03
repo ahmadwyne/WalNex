@@ -2,6 +2,9 @@ package com.example.walnex;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
+
+import com.google.firebase.auth.FirebaseAuth;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -74,18 +77,27 @@ public final class WalletManager {
                 .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
+    private static String scopedKey(String baseKey) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (TextUtils.isEmpty(uid)) {
+            return baseKey + "_signed_out";
+        }
+        return baseKey + "_" + uid;
+    }
+
     // ── Balance ───────────────────────────────────────────────────────────────
 
     /** Returns the stored balance, seeding it with {@link #DEFAULT_BALANCE} on first call. */
     public static double getBalance(Context ctx) {
         SharedPreferences sp = prefs(ctx);
-        if (!sp.contains(KEY_BALANCE)) {
+        String key = scopedKey(KEY_BALANCE);
+        if (!sp.contains(key)) {
             // First launch — seed with default
-            sp.edit().putString(KEY_BALANCE, String.valueOf(DEFAULT_BALANCE)).apply();
+            sp.edit().putString(key, String.valueOf(DEFAULT_BALANCE)).apply();
             return DEFAULT_BALANCE;
         }
         try {
-            return Double.parseDouble(sp.getString(KEY_BALANCE, String.valueOf(DEFAULT_BALANCE)));
+            return Double.parseDouble(sp.getString(key, String.valueOf(DEFAULT_BALANCE)));
         } catch (NumberFormatException e) {
             return DEFAULT_BALANCE;
         }
@@ -93,7 +105,7 @@ public final class WalletManager {
 
     /** Overwrites the stored balance. */
     public static void setBalance(Context ctx, double balance) {
-        prefs(ctx).edit().putString(KEY_BALANCE, String.valueOf(balance)).apply();
+        prefs(ctx).edit().putString(scopedKey(KEY_BALANCE), String.valueOf(balance)).apply();
     }
 
     /**
@@ -117,7 +129,7 @@ public final class WalletManager {
     /** Returns the most-recent-first list of transfer recipients (up to 10). */
     public static List<RecentTransfer> getRecentTransfers(Context ctx) {
         List<RecentTransfer> list = new ArrayList<>();
-        String json = prefs(ctx).getString(KEY_RECENT_XFERS, null);
+        String json = prefs(ctx).getString(scopedKey(KEY_RECENT_XFERS), null);
         if (json == null) return list;
         try {
             JSONArray arr = new JSONArray(json);
@@ -163,7 +175,7 @@ public final class WalletManager {
             }
         } catch (JSONException ignored) {}
 
-        prefs(ctx).edit().putString(KEY_RECENT_XFERS, arr.toString()).apply();
+        prefs(ctx).edit().putString(scopedKey(KEY_RECENT_XFERS), arr.toString()).apply();
     }
 
     // ── Recent transactions ───────────────────────────────────────────────────
@@ -173,7 +185,7 @@ public final class WalletManager {
     /** Returns the most-recent-first list of local transactions (up to 20). */
     public static List<LocalTransaction> getRecentTransactions(Context ctx) {
         List<LocalTransaction> list = new ArrayList<>();
-        String json = prefs(ctx).getString(KEY_RECENT_TXS, null);
+        String json = prefs(ctx).getString(scopedKey(KEY_RECENT_TXS), null);
         if (json == null) return list;
         try {
             JSONArray arr = new JSONArray(json);
@@ -216,7 +228,7 @@ public final class WalletManager {
             }
         } catch (JSONException ignored) {}
 
-        prefs(ctx).edit().putString(KEY_RECENT_TXS, arr.toString()).apply();
+        prefs(ctx).edit().putString(scopedKey(KEY_RECENT_TXS), arr.toString()).apply();
     }
 
     // ── Custom exception ──────────────────────────────────────────────────────

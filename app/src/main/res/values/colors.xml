@@ -72,6 +72,16 @@
     <color name="history_section_divider">#eceff6</color>
     <color name="history_row_muted">#86939b</color>
 
+    <!-- Analytics Screen -->
+    <color name="analytics_bg_top">#FFF4EC</color>
+    <color name="analytics_bg_bottom">#EEF6FF</color>
+    <color name="analytics_card_border">#E7EDF3</color>
+    <color name="analytics_title">#1B1F24</color>
+    <color name="analytics_muted">#6E7683</color>
+    <color name="analytics_accent">#1C8FB5</color>
+    <color name="analytics_accent_soft">#DFF2F6</color>
+    <color name="analytics_bar_track">#E6EDF6</color>
+
     <!-- Amount field: placeholder color (before typing) -->
     <color name="transfer_amount_placeholder">#b8c2c7</color>
     <!-- Amount field: active color (while typing) -->

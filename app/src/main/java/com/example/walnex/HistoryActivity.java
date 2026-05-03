@@ -6,10 +6,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -20,6 +25,7 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -28,6 +34,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.Timestamp;
+import com.example.walnex.transfer.TransferRecord;
+import com.example.walnex.wallet.WalletDefaults;
 
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -40,6 +53,12 @@ import java.util.Locale;
 import java.util.Map;
 
 public class HistoryActivity extends AppCompatActivity {
+
+    private enum FilterMode {
+        ALL,
+        CREDIT,
+        DEBIT
+    }
 
     // ── RecyclerView item types ────────────────────────────────────────────────
     private static final int VIEW_TYPE_HEADER = 0;
@@ -79,6 +98,8 @@ public class HistoryActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private HistoryAdapter adapter;
     private List<HomeActivity.Transaction> allTransactions;
+    private FilterMode filterMode = FilterMode.ALL;
+    private String currentQuery = "";
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -98,12 +119,102 @@ public class HistoryActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setItemAnimator(null); // avoid flicker on search filter
 
-        allTransactions = buildDummyTransactions();
+        allTransactions = new ArrayList<>();
         adapter = new HistoryAdapter(buildFlatList(allTransactions));
         recyclerView.setAdapter(adapter);
 
         setupSearch();
         setupNavBar();
+        loadTransactions();
+    }
+
+    private void loadTransactions() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            allTransactions = new ArrayList<>();
+            applyFilters();
+            return;
+        }
+
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(user.getUid())
+            .collection("transactions")
+            .orderBy(TransferRecord.FIELD_CREATED_AT, Query.Direction.DESCENDING)
+            .limit(60)
+            .get()
+            .addOnSuccessListener(snapshot -> {
+                List<HomeActivity.Transaction> list = new ArrayList<>();
+                for (QueryDocumentSnapshot doc : snapshot) {
+                    HomeActivity.Transaction tx = mapTransferTransaction(doc, user.getUid());
+                    if (tx != null) {
+                        list.add(tx);
+                    }
+                }
+                allTransactions = list;
+                applyFilters();
+            })
+            .addOnFailureListener(error ->
+                {
+                    allTransactions = new ArrayList<>();
+                    applyFilters();
+                }
+            );
+    }
+
+    private HomeActivity.Transaction mapTransferTransaction(QueryDocumentSnapshot doc, String myUid) {
+        Double amount = doc.getDouble(TransferRecord.FIELD_AMOUNT);
+        if (amount == null) {
+            return null;
+        }
+
+        String senderUid = doc.getString(TransferRecord.FIELD_SENDER_UID);
+        boolean isCredit = senderUid == null || !senderUid.equals(myUid);
+
+        String counterparty = resolveCounterpartyName(doc, myUid);
+        if (TextUtils.isEmpty(counterparty)) {
+            counterparty = getString(R.string.home_action_transfer);
+        }
+
+        String currency = doc.getString(TransferRecord.FIELD_CURRENCY);
+        if (TextUtils.isEmpty(currency)) {
+            currency = WalletDefaults.DEFAULT_CURRENCY;
+        }
+
+        Timestamp timestamp = doc.getTimestamp(TransferRecord.FIELD_CREATED_AT);
+        long timestampMs = timestamp != null
+            ? timestamp.toDate().getTime()
+            : System.currentTimeMillis();
+
+        String txId = doc.getString(TransferRecord.FIELD_TX_ID);
+        if (TextUtils.isEmpty(txId)) {
+            txId = doc.getId();
+        }
+
+        return new HomeActivity.Transaction(
+            counterparty,
+            getString(R.string.home_action_transfer),
+            R.drawable.ic_tx_generic,
+            isCredit,
+            amount,
+            currency,
+            timestampMs,
+            txId
+        );
+    }
+
+    private String resolveCounterpartyName(QueryDocumentSnapshot doc, String myUid) {
+        String senderUid = doc.getString(TransferRecord.FIELD_SENDER_UID);
+        boolean isSender = senderUid != null && senderUid.equals(myUid);
+        String name = isSender
+            ? doc.getString(TransferRecord.FIELD_RECIPIENT_NAME)
+            : doc.getString(TransferRecord.FIELD_SENDER_NAME);
+        if (!TextUtils.isEmpty(name)) {
+            return name;
+        }
+        return isSender
+            ? doc.getString(TransferRecord.FIELD_RECIPIENT_PHONE)
+            : doc.getString(TransferRecord.FIELD_SENDER_PHONE);
     }
 
     // ── Search ────────────────────────────────────────────────────────────────
@@ -116,29 +227,118 @@ public class HistoryActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterTransactions(s.toString().trim());
+                currentQuery = s.toString().trim();
+                applyFilters();
             }
         });
 
-        // Filter button — show a simple toast for now; hook up a full filter sheet later
-        findViewById(R.id.buttonFilter).setOnClickListener(v ->
-                Toast.makeText(this, "Filter options – coming soon", Toast.LENGTH_SHORT).show());
+        findViewById(R.id.buttonFilter).setOnClickListener(v -> showFilterDialog());
     }
 
     private void filterTransactions(String query) {
-        if (query.isEmpty()) {
-            adapter.updateList(buildFlatList(allTransactions));
-            return;
-        }
-        String lower = query.toLowerCase(Locale.getDefault());
+        currentQuery = query != null ? query : "";
+        applyFilters();
+    }
+
+    private void applyFilters() {
         List<HomeActivity.Transaction> filtered = new ArrayList<>();
+        String lower = currentQuery.toLowerCase(Locale.getDefault());
+
         for (HomeActivity.Transaction tx : allTransactions) {
-            if (tx.merchantName.toLowerCase(Locale.getDefault()).contains(lower)
-                    || tx.merchantType.toLowerCase(Locale.getDefault()).contains(lower)) {
+            if (!matchesFilterMode(tx)) {
+                continue;
+            }
+
+            if (TextUtils.isEmpty(lower)) {
+                filtered.add(tx);
+                continue;
+            }
+
+            String merchant = tx.merchantName != null
+                ? tx.merchantName.toLowerCase(Locale.getDefault())
+                : "";
+            String type = tx.merchantType != null
+                ? tx.merchantType.toLowerCase(Locale.getDefault())
+                : "";
+
+            if (merchant.contains(lower) || type.contains(lower)) {
                 filtered.add(tx);
             }
         }
+
         adapter.updateList(buildFlatList(filtered));
+    }
+
+    private boolean matchesFilterMode(HomeActivity.Transaction tx) {
+        if (filterMode == FilterMode.ALL) return true;
+        if (filterMode == FilterMode.CREDIT) return tx.isCredit;
+        return !tx.isCredit;
+    }
+
+    private void showFilterDialog() {
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_history_filter, null);
+        RadioGroup group = view.findViewById(R.id.radioGroupFilter);
+        RadioButton optionAll = view.findViewById(R.id.radioFilterAll);
+        RadioButton optionIn = view.findViewById(R.id.radioFilterIn);
+        RadioButton optionOut = view.findViewById(R.id.radioFilterOut);
+        View rowAll = view.findViewById(R.id.rowFilterAll);
+        View rowIn = view.findViewById(R.id.rowFilterIn);
+        View rowOut = view.findViewById(R.id.rowFilterOut);
+        TextView cancel = view.findViewById(R.id.textFilterCancel);
+        TextView reset = view.findViewById(R.id.textFilterReset);
+        View apply = view.findViewById(R.id.buttonFilterApply);
+
+        if (filterMode == FilterMode.CREDIT) {
+            optionIn.setChecked(true);
+        } else if (filterMode == FilterMode.DEBIT) {
+            optionOut.setChecked(true);
+        } else {
+            optionAll.setChecked(true);
+        }
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setView(view)
+            .create();
+
+        dialog.setOnShowListener(d -> {
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                int screenWidth = getResources().getDisplayMetrics().widthPixels;
+                int maxWidth = dpToPx(320);
+                int dialogWidth = Math.min(maxWidth, (int) (screenWidth * 0.92f));
+                dialog.getWindow().setLayout(dialogWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+            }
+        });
+
+        rowAll.setOnClickListener(v -> optionAll.setChecked(true));
+        rowIn.setOnClickListener(v -> optionIn.setChecked(true));
+        rowOut.setOnClickListener(v -> optionOut.setChecked(true));
+
+        cancel.setOnClickListener(v -> dialog.dismiss());
+        reset.setOnClickListener(v -> {
+            filterMode = FilterMode.ALL;
+            optionAll.setChecked(true);
+            applyFilters();
+            dialog.dismiss();
+        });
+        apply.setOnClickListener(v -> {
+            int checkedId = group.getCheckedRadioButtonId();
+            if (checkedId == R.id.radioFilterIn) {
+                filterMode = FilterMode.CREDIT;
+            } else if (checkedId == R.id.radioFilterOut) {
+                filterMode = FilterMode.DEBIT;
+            } else {
+                filterMode = FilterMode.ALL;
+            }
+            applyFilters();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     // ── Nav bar ───────────────────────────────────────────────────────────────
@@ -323,64 +523,6 @@ public class HistoryActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // ── Dummy data  ───────────────────────────────────────────────────────────
-
-    private List<HomeActivity.Transaction> buildDummyTransactions() {
-        long now = System.currentTimeMillis();
-        long day = 24L * 60 * 60 * 1000;
-        long hour = 60L * 60 * 1000;
-        long min = 60L * 1000;
-
-        List<HomeActivity.Transaction> list = new ArrayList<>();
-
-        // Today
-        list.add(new HomeActivity.Transaction(
-                "Walmart", "Retailer corporation", R.drawable.ic_tx_generic,
-                false, 35.23, "PKR", now - (2 * hour + 28 * min), "23010412432431"));
-        list.add(new HomeActivity.Transaction(
-                "Top up", "Wallet top‑up", R.drawable.ic_topup,
-                true, 430.00, "PKR", now - (5 * hour + 48 * min), "23010412432432"));
-        list.add(new HomeActivity.Transaction(
-                "Netflix", "Subscription", R.drawable.ic_tx_generic,
-                false, 13.00, "PKR", now - (8 * hour + 7 * min), "23010412432433"));
-
-        // Yesterday
-        list.add(new HomeActivity.Transaction(
-                "Amazon", "Online retailer", R.drawable.ic_tx_generic,
-                false, 12.23, "PKR", now - (day + 2 * hour + 28 * min), "23010412432434"));
-        list.add(new HomeActivity.Transaction(
-                "Nike", "Apparel", R.drawable.ic_tx_generic,
-                false, 50.23, "PKR", now - (day + 5 * hour + 48 * min), "23010412432435"));
-        list.add(new HomeActivity.Transaction(
-                "The Home Depot", "Hardware store", R.drawable.ic_tx_generic,
-                false, 129.00, "PKR", now - (day + 9 * hour + 7 * min), "23010412432436"));
-
-        // 3 days ago
-        list.add(new HomeActivity.Transaction(
-                "Amazon", "Online retailer", R.drawable.ic_tx_generic,
-                false, 35.23, "PKR", now - (3 * day + 2 * hour + 28 * min), "23010412432437"));
-        list.add(new HomeActivity.Transaction(
-                "Top up", "Wallet top‑up", R.drawable.ic_topup,
-                true, 200.00, "PKR", now - (3 * day + 6 * hour), "23010412432438"));
-
-        // 5 days ago
-        list.add(new HomeActivity.Transaction(
-                "Spotify", "Music subscription", R.drawable.ic_tx_generic,
-                false, 9.99, "PKR", now - (5 * day + hour), "23010412432439"));
-        list.add(new HomeActivity.Transaction(
-                "Noon", "E-commerce", R.drawable.ic_tx_generic,
-                false, 67.50, "PKR", now - (5 * day + 4 * hour), "23010412432440"));
-
-        // 10 days ago
-        list.add(new HomeActivity.Transaction(
-                "Carrefour", "Supermarket", R.drawable.ic_tx_generic,
-                false, 210.75, "PKR", now - (10 * day + 3 * hour), "23010412432441"));
-        list.add(new HomeActivity.Transaction(
-                "Top up", "Wallet top‑up", R.drawable.ic_topup,
-                true, 1000.00, "PKR", now - (10 * day + 7 * hour), "23010412432442"));
-
-        return list;
-    }
 
     // ── RecyclerView Adapter ──────────────────────────────────────────────────
 
