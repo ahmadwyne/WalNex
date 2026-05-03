@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardPaymentRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/home_sheet_bg">
+
+    <!-- ===== BACK HEADER ===== -->
+    <LinearLayout
+        android:id="@+id/layoutBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="4dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_chevron_left"
+            android:contentDescription="Back"
+            app:tint="#006ecd" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:text="@string/card_payment_back"
+            android:fontFamily="@font/plus_jakarta_sans"
+            android:textSize="15sp"
+            android:textColor="#006ecd" />
+    </LinearLayout>
+
+    <!-- ===== SELECTED CARD ===== -->
+    <!--
+        CardView renders the card with clipped rounded corners.
+        Background drawable and text are set programmatically in the Activity.
+    -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardPaymentCard"
+        android:layout_width="0dp"
+        android:layout_height="200dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="6dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutBack"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Textured background (set in Activity) -->
+        <ImageView
+            android:id="@+id/imagePayCardBg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitXY"
+            android:src="@drawable/bg_card_circles"
+            android:contentDescription="Card background" />
+
+        <!-- Card content overlay -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="20dp">
+
+            <TextView
+                android:id="@+id/textPayCardHolderName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:text="Card Holder" />
+
+            <TextView
+                android:id="@+id/textPayCardNumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentTop="true"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textColor="#CCFFFFFF"
+                android:textSize="13sp"
+                android:letterSpacing="0.08"
+                android:text="**** 0000" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentBottom="true"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/plus_jakarta_sans"
+                    android:text="@string/cards_balance_label"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/textPayCardBalance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/plus_jakarta_sans"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:text="PKR 0" />
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:src="@drawable/ic_nfc"
+                android:contentDescription="NFC"
+                app:tint="#CCFFFFFF" />
+
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- ===== NFC / "Move near a device" section ===== -->
+    <LinearLayout
+        android:id="@+id/layoutNfcPrompt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/cardPaymentCard"
+        app:layout_constraintBottom_toTopOf="@id/btnQrPay"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_nfc"
+            android:contentDescription="NFC"
+            app:tint="#75838d" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/card_payment_nfc_hint"
+            android:fontFamily="@font/plus_jakarta_sans"
+            android:textSize="14sp"
+            android:textColor="#75838d" />
+
+    </LinearLayout>
+
+    <!-- ===== QR PAY BUTTON ===== -->
+    <LinearLayout
+        android:id="@+id/btnQrPay"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="32dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_btn_qr_pay"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_qr_code"
+            android:contentDescription="QR"
+            app:tint="#FFFFFF" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/card_payment_qr_pay"
+            android:fontFamily="@font/plus_jakarta_sans"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Overlay layout placed on top of each card background drawable.
+    Parent is a FrameLayout with height="200dp".
+    All text is white; layout matches the Figma spec:
+      • Top-left  → Card holder name
+      • Top-right → Masked card number (e.g. **** 2312)
+      • Bottom-left  → "Balance" label + PKR amount
+      • Bottom-right → NFC / scan icon
+-->
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="200dp"
+    android:padding="20dp">
+
+    <!-- Top-left: Cardholder name -->
+    <TextView
+        android:id="@+id/textCardHolderName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:fontFamily="@font/plus_jakarta_sans"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:text="Abdullah Ghatashe" />
+
+    <!-- Top-right: Masked card number -->
+    <TextView
+        android:id="@+id/textCardNumber"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:fontFamily="@font/plus_jakarta_sans"
+        android:textColor="#CCFFFFFF"
+        android:textSize="13sp"
+        android:letterSpacing="0.08"
+        android:text="**** 2312" />
+
+    <!-- Bottom-left: Balance label + amount -->
+    <LinearLayout
+        android:id="@+id/layoutCardBalance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/plus_jakarta_sans"
+            android:text="@string/cards_balance_label"
+            android:textColor="#CCFFFFFF"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/textCardBalance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/plus_jakarta_sans"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:text="PKR 2,354" />
+    </LinearLayout>
+
+    <!-- Bottom-right: NFC / scan icon -->
+    <ImageView
+        android:id="@+id/imageCardNfc"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:src="@drawable/ic_nfc"
+        android:contentDescription="NFC"
+        app:tint="#CCFFFFFF" />
+
+</RelativeLayout>

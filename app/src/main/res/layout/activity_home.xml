@@ -1,64 +1,548 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/homeRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app_gradient">
+    android:background="@color/home_header_bg">
 
+    <!-- Scrollable Content -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/homeScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="72dp"
+        android:fillViewport="true"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- ===== HEADER SECTION (purple bg) ===== -->
+            <LinearLayout
+                android:id="@+id/headerSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/home_header_bg"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="28dp">
+
+                <!-- Top bar: Avatar + Greeting + Settings -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Avatar -->
+                    <ImageView
+                        android:id="@+id/imageUserAvatar"
+                        android:layout_width="46dp"
+                        android:layout_height="46dp"
+                        android:background="@drawable/bg_recipient_avatar"
+                        android:contentDescription="@string/home_avatar_desc"
+                        android:padding="4dp"
+                        android:src="@drawable/ic_person_avatar" />
+
+                    <!-- Greeting text -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/textGreetingHello"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/plus_jakarta_sans"
+                            android:text="@string/home_greeting_hello"
+                            android:textColor="#C4B8F5"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/textGreetingName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/plus_jakarta_sans"
+                            android:text="Abdullah!"
+                            android:textColor="@color/white"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Settings icon -->
+                    <ImageView
+                        android:id="@+id/imageSettings"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/home_settings_desc"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_settings"
+                        app:tint="@color/white" />
+                </LinearLayout>
+
+                <!-- Balance Card -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardBalance"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_balance_card"
+                        android:orientation="vertical"
+                        android:paddingTop="28dp"
+                        android:paddingBottom="22dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp">
+
+                        <!-- Main balance label -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:fontFamily="@font/plus_jakarta_sans"
+                            android:text="@string/home_main_balance_label"
+                            android:textColor="#C4B8F5"
+                            android:textSize="13sp"
+                            android:letterSpacing="0.06" />
+
+                        <!-- Balance amount row -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="6dp"
+                            android:gravity="bottom"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/textBalanceCurrency"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="6dp"
+                                android:fontFamily="@font/plus_jakarta_sans"
+                                android:text="PKR"
+                                android:textColor="@color/white"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/textBalanceWhole"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:fontFamily="@font/plus_jakarta_sans"
+                                android:text="14,235"
+                                android:textColor="@color/white"
+                                android:textSize="40sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/textBalanceDecimal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="8dp"
+                                android:fontFamily="@font/plus_jakarta_sans"
+                                android:text=".34"
+                                android:textColor="#C4B8F5"
+                                android:textSize="20sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.8dp"
+                            android:layout_marginTop="20dp"
+                            android:layout_marginBottom="18dp"
+                            android:background="@color/home_card_action_divider" />
+
+                        <!-- Action buttons row: Top up | Withdraw | Transfer -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:orientation="horizontal">
+
+                            <!-- Top Up -->
+                            <LinearLayout
+                                android:id="@+id/actionTopUp"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="8dp">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ic_topup"
+                                    android:contentDescription="@string/home_action_topup"
+                                    app:tint="@color/white" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="6dp"
+                                    android:fontFamily="@font/plus_jakarta_sans"
+                                    android:text="@string/home_action_topup"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <!-- Vertical divider -->
+                            <View
+                                android:layout_width="0.8dp"
+                                android:layout_height="40dp"
+                                android:background="@color/home_card_action_divider" />
+
+                            <!-- Withdraw -->
+                            <LinearLayout
+                                android:id="@+id/actionWithdraw"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="8dp">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ic_withdraw"
+                                    android:contentDescription="@string/home_action_withdraw"
+                                    app:tint="@color/white" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="6dp"
+                                    android:fontFamily="@font/plus_jakarta_sans"
+                                    android:text="@string/home_action_withdraw"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <!-- Vertical divider -->
+                            <View
+                                android:layout_width="0.8dp"
+                                android:layout_height="40dp"
+                                android:background="@color/home_card_action_divider" />
+
+                            <!-- Transfer -->
+                            <LinearLayout
+                                android:id="@+id/actionTransfer"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="8dp">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ic_transfer"
+                                    android:contentDescription="@string/home_action_transfer"
+                                    app:tint="@color/white" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="6dp"
+                                    android:fontFamily="@font/plus_jakarta_sans"
+                                    android:text="@string/home_action_transfer"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+            <!-- ===== WHITE SHEET ===== -->
+            <LinearLayout
+                android:id="@+id/homeContentSheet"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_home_sheet"
+                android:minHeight="500dp"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingTop="28dp"
+                android:paddingBottom="24dp">
+
+                <!-- === RECENT TRANSFERS === -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/plus_jakarta_sans"
+                    android:text="@string/home_recent_transfers_title"
+                    android:textColor="@color/home_section_title"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <!-- Recent transfers horizontal scroll -->
+                <HorizontalScrollView
+                    android:id="@+id/scrollRecentTransfers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginStart="-20dp"
+                    android:layout_marginEnd="-20dp"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/layoutRecentTransfers"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <!-- Add Button -->
+                        <LinearLayout
+                            android:id="@+id/addRecipient"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="16dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <FrameLayout
+                                android:layout_width="54dp"
+                                android:layout_height="54dp"
+                                android:background="@drawable/bg_add_recipient">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:fontFamily="@font/plus_jakarta_sans"
+                                    android:text="+"
+                                    android:textColor="#7343e7"
+                                    android:textSize="26sp"
+                                    android:textStyle="bold" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:fontFamily="@font/plus_jakarta_sans"
+                                android:text="@string/home_add_recipient"
+                                android:textColor="@color/home_section_subtitle"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <!-- Recipients will be dynamically added here by Java -->
+                    </LinearLayout>
+                </HorizontalScrollView>
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="22dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="@color/home_divider" />
+
+                <!-- === LATEST TRANSACTIONS === -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/plus_jakarta_sans"
+                        android:text="@string/home_latest_transactions_title"
+                        android:textColor="@color/home_section_title"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/textViewAll"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:fontFamily="@font/plus_jakarta_sans"
+                        android:padding="4dp"
+                        android:text="@string/home_view_all"
+                        android:textColor="@color/home_view_all"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Transaction rows container -->
+                <LinearLayout
+                    android:id="@+id/layoutTransactions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ===== BOTTOM NAVIGATION ===== -->
     <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:background="@drawable/bg_startup_state_card"
-        android:orientation="vertical"
-        android:padding="20dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:id="@+id/bottomNavBar"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_nav_bar"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/plus_jakarta_sans"
-            android:text="@string/home_placeholder_title"
-            android:textColor="@color/text_primary"
-            android:textSize="28sp"
-            android:textStyle="bold" />
+        <!-- Home Tab -->
+        <LinearLayout
+            android:id="@+id/navHome"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/home_placeholder_subtitle"
-            android:textColor="@color/text_secondary"
-            android:textSize="15sp" />
+            <ImageView
+                android:id="@+id/navIconHome"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_nav_home"
+                android:contentDescription="@string/nav_home"
+                app:tint="@color/nav_selected" />
 
-        <TextView
-            android:id="@+id/textSignedInStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp" />
+            <TextView
+                android:id="@+id/navLabelHome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:text="@string/nav_home"
+                android:textColor="@color/nav_selected"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonResetCredentials"
-            style="@style/Widget.WalNex.Button.Secondary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:text="@string/auth_reset_credentials" />
+        <!-- History Tab -->
+        <LinearLayout
+            android:id="@+id/navHistory"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonSignOut"
-            style="@style/Widget.WalNex.Button.SplashPrimary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="@string/auth_sign_out" />
+            <ImageView
+                android:id="@+id/navIconHistory"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_nav_history"
+                android:contentDescription="@string/nav_history"
+                app:tint="@color/nav_unselected" />
+
+            <TextView
+                android:id="@+id/navLabelHistory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:text="@string/nav_history"
+                android:textColor="@color/nav_unselected"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Cards Tab -->
+        <LinearLayout
+            android:id="@+id/navCards"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <ImageView
+                android:id="@+id/navIconCards"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_nav_cards"
+                android:contentDescription="@string/nav_cards"
+                app:tint="@color/nav_unselected" />
+
+            <TextView
+                android:id="@+id/navLabelCards"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:text="@string/nav_cards"
+                android:textColor="@color/nav_unselected"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- More Tab -->
+        <LinearLayout
+            android:id="@+id/navMore"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <ImageView
+                android:id="@+id/navIconMore"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_nav_more"
+                android:contentDescription="@string/nav_more"
+                app:tint="@color/nav_unselected" />
+
+            <TextView
+                android:id="@+id/navLabelMore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:text="@string/nav_more"
+                android:textColor="@color/nav_unselected"
+                android:textSize="11sp" />
+        </LinearLayout>
     </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

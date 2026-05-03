@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardsRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/home_sheet_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="72dp"
+        android:orientation="vertical"
+        android:paddingTop="24dp">
+
+        <!-- ===== HEADER ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:layout_marginBottom="28dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/cards_title"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:textColor="@color/home_section_title" />
+
+            <TextView
+                android:id="@+id/textAddCard"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cards_add_card"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#0064ca"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="4dp" />
+        </LinearLayout>
+
+        <!--
+            ViewPager2 for the stacked card deck.
+
+            KEY SETTINGS FOR THE STACK EFFECT:
+            ─────────────────────────────────────────────────────────────────
+            • layout_height="360dp"       — fixed height tall enough to show the
+                                            active card (200 dp) PLUS the peeking
+                                            tops of the cards behind it (≈ 40 dp each).
+                                            Do NOT use wrap_content here: ViewPager2
+                                            sizes itself to the current page; wrap_content
+                                            collapses the pager to 0 when a PageTransformer
+                                            translates pages outside the measured bounds.
+
+            • clipToPadding="false"       — lets the scaled/translated cards bleed
+            • clipChildren="false"          outside the pager's own view bounds so the
+                                            peek rows remain visible.
+
+            • offscreenPageLimit is set   — set in Java to 3 so adjacent pages stay
+              in Java                       attached and the PageTransformer can
+                                            position them.
+
+            • No horizontal padding       — cards are full-width; side peeking is not
+                                            needed here (only vertical stacking).
+            ─────────────────────────────────────────────────────────────────
+        -->
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPagerCards"
+            android:layout_width="match_parent"
+            android:layout_height="360dp"
+            android:clipToPadding="false"
+            android:clipChildren="false"
+            android:overScrollMode="never"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp" />
+
+    </LinearLayout>
+
+    <!-- ===== BOTTOM NAVIGATION ===== -->
+    <LinearLayout
+        android:id="@+id/bottomNavBar"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_nav_bar"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/navHome"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_nav_home"
+                android:contentDescription="@string/nav_home"
+                app:tint="@color/nav_unselected" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:text="@string/nav_home"
+                android:textColor="@color/nav_unselected"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navHistory"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_nav_history"
+                android:contentDescription="@string/nav_history"
+                app:tint="@color/nav_unselected" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:text="@string/nav_history"
+                android:textColor="@color/nav_unselected"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Cards Tab (SELECTED) -->
+        <LinearLayout
+            android:id="@+id/navCards"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_nav_cards"
+                android:contentDescription="@string/nav_cards"
+                app:tint="@color/nav_selected" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:text="@string/nav_cards"
+                android:textColor="@color/nav_selected"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navMore"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_nav_more"
+                android:contentDescription="@string/nav_more"
+                app:tint="@color/nav_unselected" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:text="@string/nav_more"
+                android:textColor="@color/nav_unselected"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
