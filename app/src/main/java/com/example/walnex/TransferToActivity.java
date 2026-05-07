@@ -109,8 +109,8 @@ public class TransferToActivity extends AppCompatActivity {
         bindViews();
         setupBackButton();
         setupNewContact();
-        setupSearch();
         setupRecyclerViews();
+        setupSearch();
 
         // Ask for contacts permission, then load data
         checkAndRequestContactsPermission();
@@ -212,6 +212,7 @@ public class TransferToActivity extends AppCompatActivity {
     }
 
     private void filterContacts(String query) {
+        if (allAdapter == null) return;
         if (query.isEmpty()) {
             allAdapter.submitList(allContacts);
             layoutFrequentSection.setVisibility(
@@ -242,11 +243,13 @@ public class TransferToActivity extends AppCompatActivity {
         rvFrequent.setLayoutManager(new LinearLayoutManager(this));
         rvFrequent.setAdapter(frequentAdapter);
         rvFrequent.setNestedScrollingEnabled(false);
+        rvFrequent.setHasFixedSize(true);
 
         allAdapter = new TransferContactsAdapter(this::openTransferUser);
         rvAll.setLayoutManager(new LinearLayoutManager(this));
         rvAll.setAdapter(allAdapter);
         rvAll.setNestedScrollingEnabled(false);
+        rvAll.setHasFixedSize(true);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -270,6 +273,7 @@ public class TransferToActivity extends AppCompatActivity {
                     TransferRepository.loadDeviceContacts(this);
 
             runOnUiThread(() -> {
+                        if (isFinishing() || isDestroyed()) return;
                 allContacts = contacts;
                 allAdapter.submitList(allContacts);
 

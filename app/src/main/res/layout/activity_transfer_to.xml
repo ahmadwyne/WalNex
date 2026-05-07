@@ -1,19 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/transferToRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF"
-    android:fillViewport="true">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingTop="16dp"
-        android:paddingBottom="32dp">
+    android:orientation="vertical"
+    android:paddingTop="16dp"
+    android:paddingBottom="32dp">
 
         <!-- ===== BACK ROW ===== -->
         <LinearLayout
@@ -185,11 +180,11 @@
         </LinearLayout>
 
         <!-- ===== ALL CONTACTS SECTION ===== -->
-        <!-- ===== ALL CONTACTS SECTION ===== -->
         <LinearLayout
             android:id="@+id/layoutAllSection"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:orientation="vertical"
             android:layout_marginTop="20dp">
 
@@ -220,10 +215,10 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvAllContacts"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:nestedScrollingEnabled="true"
                 android:overScrollMode="never" />
         </LinearLayout>
 
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+</LinearLayout>
