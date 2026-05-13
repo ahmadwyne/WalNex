@@ -19,7 +19,9 @@ service cloud.firestore {
         'email',
         'createdAt',
         'updatedAt',
-        'lastLoginAt'
+        'lastLoginAt',
+        'avatarIndex',
+        'avatarUri'
       ]);
     }
 
@@ -72,6 +74,22 @@ service cloud.firestore {
         || request.resource.data.createdAt is timestamp);
     }
 
+    function cardFieldsValid() {
+      return request.resource.data.keys().hasOnly([
+        'holderName',
+        'lastFour',
+        'balance',
+        'currency',
+        'cardType',
+        'createdAt'
+      ])
+      && request.resource.data.holderName is string
+      && request.resource.data.lastFour is string
+      && request.resource.data.balance is number
+      && request.resource.data.currency is string
+      && request.resource.data.cardType is string;
+    }
+
     match /users/{uid} {
       allow read: if isSignedIn();
 
@@ -90,7 +108,9 @@ service cloud.firestore {
           'updatedAt',
           'lastLoginAt',
           'phoneE164',
-          'status'
+          'status',
+          'avatarIndex',
+          'avatarUri'
         ])
         && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)
         && (!('phoneE164' in resource.data) || request.resource.data.phoneE164 == resource.data.phoneE164)
@@ -109,6 +129,12 @@ service cloud.firestore {
       allow read: if isSelf(uid);
       allow create: if isSignedIn() && txFieldsValid();
       allow update, delete: if false;
+    }
+
+    match /users/{uid}/cards/{cardId} {
+      allow read:           if isSelf(uid);
+      allow create, update: if isSelf(uid) && cardFieldsValid();
+      allow delete:         if isSelf(uid);
     }
 
     match /ledger/{uid}/entries/{entryId} {

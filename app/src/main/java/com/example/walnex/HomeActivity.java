@@ -94,6 +94,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private LinearLayout layoutRecentTransfers;
     private LinearLayout layoutTransactions;
+    private ImageView    imageUserAvatar;
 
     // ──────────────────────────────────────────────────────────────────────────
     //  Lifecycle
@@ -113,6 +114,14 @@ public class HomeActivity extends AppCompatActivity {
 
         layoutRecentTransfers = findViewById(R.id.layoutRecentTransfers);
         layoutTransactions    = findViewById(R.id.layoutTransactions);
+        imageUserAvatar       = findViewById(R.id.imageUserAvatar);
+        imageUserAvatar.setOutlineProvider(new android.view.ViewOutlineProvider() {
+            @Override
+            public void getOutline(android.view.View view, android.graphics.Outline outline) {
+                outline.setOval(0, 0, view.getWidth(), view.getHeight());
+            }
+        });
+        imageUserAvatar.setClipToOutline(true);
 
         bindUserStatus();
         bindBalance();
@@ -131,7 +140,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Refresh balance and lists whenever we come back to this screen
+        bindUserStatus();
         bindBalance();
         layoutRecentTransfers.removeAllViews();
         layoutTransactions.removeAllViews();
@@ -165,11 +174,45 @@ public class HomeActivity extends AppCompatActivity {
                         displayName = TextUtils.isEmpty(phone) ? uid : phone;
                     }
                     setGreeting(displayName);
+                    applyUserAvatar(
+                            snapshot.getString("avatarUri"),
+                            snapshot.getLong("avatarIndex"));
                 })
                 .addOnFailureListener(e -> {
                     String phone = user.getPhoneNumber();
                     setGreeting(TextUtils.isEmpty(phone) ? uid : phone);
                 });
+    }
+
+    private void applyUserAvatar(String avatarUri, Long avatarIdx) {
+        if (imageUserAvatar == null) return;
+        final int[] AVATAR_RES = {
+                R.drawable.ic_avatar_1,
+                R.drawable.ic_avatar_2,
+                R.drawable.ic_avatar_3
+        };
+        if ("local".equals(avatarUri)) {
+            java.io.File f = new java.io.File(getFilesDir(), "user_avatar.jpg");
+            if (f.exists()) {
+                android.graphics.Bitmap bmp =
+                        android.graphics.BitmapFactory.decodeFile(f.getAbsolutePath());
+                if (bmp != null) {
+                    imageUserAvatar.setBackground(null);
+                    imageUserAvatar.clearColorFilter();
+                    imageUserAvatar.setPadding(0, 0, 0, 0);
+                    imageUserAvatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    imageUserAvatar.setImageBitmap(bmp);
+                    return;
+                }
+            }
+        }
+        if (avatarIdx != null && avatarIdx >= 0 && avatarIdx < AVATAR_RES.length) {
+            imageUserAvatar.setBackground(null);
+            imageUserAvatar.clearColorFilter();
+            imageUserAvatar.setPadding(0, 0, 0, 0);
+            imageUserAvatar.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            imageUserAvatar.setImageResource(AVATAR_RES[(int)(long)avatarIdx]);
+        }
     }
 
     private void setGreeting(String name) {
