@@ -29,11 +29,18 @@ import java.util.Set;
 /**
  * Single source of truth for all transfer-feature backend operations.
  *
- * Running on the Firebase Spark (free) tier — no Cloud Functions available.
- * Transfer logic is executed as a client-side Firestore transaction (demo mode):
- *   1. Read sender wallet balance.
- *   2. Validate sufficient funds.
- *   3. Atomically debit sender, credit recipient, and write both ledger entries.
+ * Two transfer modes (both run as a client-side Firestore atomic transaction):
+ *
+ *   INTERNAL — recipient is a registered WalNex user (recipient.uid is non-empty).
+ *     1. Read sender wallet balance.
+ *     2. Validate sufficient funds.
+ *     3. Atomically debit sender, credit recipient, write both ledger entries.
+ *
+ *   EXTERNAL — recipient is a device contact only (recipient.uid is empty).
+ *     1. Read sender wallet balance.
+ *     2. Validate sufficient funds.
+ *     3. Atomically debit sender, write sender ledger entry only.
+ *        (The recipient has no WalNex account to credit.)
  */
 public final class TransferRepository {
 
@@ -47,18 +54,16 @@ public final class TransferRepository {
 
     private TransferRepository() {}
 
-    // ── Submit transfer (client-side atomic Firestore transaction) ────────────
+    // ── Submit transfer ───────────────────────────────────────────────────────
 
     /**
-     * Demo-mode transfer without a Cloud Function:
+     * Executes a transfer as a client-side atomic Firestore transaction.
      *
-     *  1. Reads the sender's wallet balance inside a transaction.
-     *  2. Throws {@link InsufficientFundsException} and rolls back if underfunded.
-     *  3. On success, atomically:
-     *       • Debits the sender wallet.
-     *       • Credits the recipient wallet.
-     *       • Writes a SUCCESS transaction record on the sender's ledger.
-     *       • Writes a SUCCESS transaction record on the recipient's ledger.
+     * If {@code recipient.uid} is non-empty the recipient is a WalNex user and
+     * their wallet is credited atomically (internal transfer).
+     *
+     * If {@code recipient.uid} is empty the recipient is a plain device contact;
+     * only the sender's wallet is debited (external transfer).
      *
      * @return Task resolving to the shared transaction document ID on success.
      */
@@ -71,98 +76,114 @@ public final class TransferRepository {
         if (sender == null) {
             return Tasks.forException(new IllegalStateException("Not signed in"));
         }
-
-        if (recipient == null || TextUtils.isEmpty(recipient.uid)) {
+        if (recipient == null) {
             return Tasks.forException(new IllegalArgumentException("Recipient missing"));
         }
 
-        if (recipient.uid.equals(sender.getUid())) {
-            return Tasks.forException(new IllegalArgumentException("Cannot transfer to yourself"));
+        final boolean isInternal = !TextUtils.isEmpty(recipient.uid);
+
+        if (isInternal && recipient.uid.equals(sender.getUid())) {
+            return Tasks.forException(
+                    new IllegalArgumentException("Cannot transfer to yourself"));
         }
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // Sender + recipient refs
-        DocumentReference senderWalletRef = db.collection(COL_WALLETS).document(sender.getUid());
-        DocumentReference recipientWalletRef = db.collection(COL_WALLETS).document(recipient.uid);
-        DocumentReference senderUserRef = db.collection(COL_USERS).document(sender.getUid());
-        DocumentReference senderTxRef = db
-            .collection(COL_USERS).document(sender.getUid())
-            .collection(COL_TRANSACTIONS).document();
+        // Sender refs (always needed)
+        final DocumentReference senderWalletRef =
+                db.collection(COL_WALLETS).document(sender.getUid());
+        final DocumentReference senderUserRef =
+                db.collection(COL_USERS).document(sender.getUid());
+        final DocumentReference senderTxRef =
+                db.collection(COL_USERS).document(sender.getUid())
+                  .collection(COL_TRANSACTIONS).document();
         final String txId = senderTxRef.getId();
 
-        DocumentReference recipientTxRef = db
-            .collection(COL_USERS).document(recipient.uid)
-            .collection(COL_TRANSACTIONS).document(txId);
+        // Recipient refs (only used for internal transfers)
+        final DocumentReference recipientWalletRef = isInternal
+                ? db.collection(COL_WALLETS).document(recipient.uid)
+                : null;
+        final DocumentReference recipientTxRef = isInternal
+                ? db.collection(COL_USERS).document(recipient.uid)
+                     .collection(COL_TRANSACTIONS).document(txId)
+                : null;
 
         return db.runTransaction(transaction -> {
 
-            // 1. Read sender wallet
-            DocumentSnapshot senderWallet = transaction.get(senderWalletRef);
+            // ── Reads (must all happen before any writes) ──────────────────
+
+            DocumentSnapshot senderWallet  = transaction.get(senderWalletRef);
+            DocumentSnapshot senderProfile = transaction.get(senderUserRef);
+
+            // Read recipient wallet only for internal transfers
+            DocumentSnapshot recipientWallet = isInternal
+                    ? transaction.get(recipientWalletRef)
+                    : null;
+
+            // ── Validate balance ───────────────────────────────────────────
+
             double currentBalance = WalletDefaults.DEFAULT_BALANCE;
             if (senderWallet.exists()) {
                 Double b = senderWallet.getDouble("balance");
                 if (b != null) currentBalance = b;
             }
 
-            // 2. Validate funds
             if (currentBalance < amount) {
                 throw new InsufficientFundsException(
                         "Balance " + currentBalance + " " + currency
                                 + " is less than " + amount + " " + currency);
             }
 
-            // 3. Read recipient wallet (needed to compute new balance)
-            DocumentSnapshot recipientWallet = transaction.get(recipientWalletRef);
-            double recipientBalance = WalletDefaults.DEFAULT_BALANCE;
-            if (recipientWallet.exists()) {
-                Double b = recipientWallet.getDouble("balance");
-                if (b != null) recipientBalance = b;
-            }
+            // ── Resolve sender metadata ────────────────────────────────────
 
-            // 4. Read sender profile (for receipt metadata)
-            DocumentSnapshot senderProfile = transaction.get(senderUserRef);
-            String senderName = senderProfile.getString("fullName");
+            String senderName  = senderProfile.getString("fullName");
             String senderPhone = senderProfile.getString("phoneE164");
             if (TextUtils.isEmpty(senderName)) {
                 senderName = !TextUtils.isEmpty(sender.getPhoneNumber())
-                    ? sender.getPhoneNumber()
-                    : sender.getUid();
+                        ? sender.getPhoneNumber()
+                        : sender.getUid();
             }
             if (TextUtils.isEmpty(senderPhone)) {
                 senderPhone = sender.getPhoneNumber();
             }
 
-            String recipientName = recipient.fullName;
+            String recipientName  = recipient.fullName;
             String recipientPhone = recipient.phoneE164;
             if (TextUtils.isEmpty(recipientName)) {
                 recipientName = !TextUtils.isEmpty(recipientPhone)
-                    ? recipientPhone
-                    : "Recipient";
+                        ? recipientPhone
+                        : "Recipient";
             }
 
-            // 5. Build shared ledger payload (status = success)
+            // ── Recipient balance (internal only) ──────────────────────────
+
+            double recipientBalance = WalletDefaults.DEFAULT_BALANCE;
+            if (isInternal && recipientWallet != null && recipientWallet.exists()) {
+                Double b = recipientWallet.getDouble("balance");
+                if (b != null) recipientBalance = b;
+            }
+
+            // ── Build ledger payload ───────────────────────────────────────
+
             Map<String, Object> txPayload = TransferRecord.newSuccessPayload(
                     sender.getUid(),
                     senderName,
                     senderPhone,
-                    recipient.uid,
+                    isInternal ? recipient.uid : "",
                     recipientPhone,
                     recipientName,
                     amount,
                     currency,
                     txId);
 
-            // 6. Apply writes atomically
+            // ── Writes ─────────────────────────────────────────────────────
+
+            // Debit sender wallet
             Map<String, Object> senderWalletUpdate = new HashMap<>();
             senderWalletUpdate.put("balance", currentBalance - amount);
             senderWalletUpdate.put("currency", currency);
-            senderWalletUpdate.put("updatedAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
-
-            Map<String, Object> recipientWalletUpdate = new HashMap<>();
-            recipientWalletUpdate.put("balance", recipientBalance + amount);
-            recipientWalletUpdate.put("currency", currency);
-            recipientWalletUpdate.put("updatedAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
+            senderWalletUpdate.put("updatedAt",
+                    com.google.firebase.firestore.FieldValue.serverTimestamp());
 
             if (senderWallet.exists()) {
                 transaction.update(senderWalletRef, senderWalletUpdate);
@@ -170,14 +191,28 @@ public final class TransferRepository {
                 transaction.set(senderWalletRef, senderWalletUpdate);
             }
 
-            if (recipientWallet.exists()) {
-                transaction.update(recipientWalletRef, recipientWalletUpdate);
-            } else {
-                transaction.set(recipientWalletRef, recipientWalletUpdate);
+            // Credit recipient wallet (internal only)
+            if (isInternal && recipientWallet != null) {
+                Map<String, Object> recipientWalletUpdate = new HashMap<>();
+                recipientWalletUpdate.put("balance", recipientBalance + amount);
+                recipientWalletUpdate.put("currency", currency);
+                recipientWalletUpdate.put("updatedAt",
+                        com.google.firebase.firestore.FieldValue.serverTimestamp());
+
+                if (recipientWallet.exists()) {
+                    transaction.update(recipientWalletRef, recipientWalletUpdate);
+                } else {
+                    transaction.set(recipientWalletRef, recipientWalletUpdate);
+                }
             }
 
+            // Sender ledger entry (always)
             transaction.set(senderTxRef, txPayload);
-            transaction.set(recipientTxRef, txPayload);
+
+            // Recipient ledger entry (internal only)
+            if (isInternal && recipientTxRef != null) {
+                transaction.set(recipientTxRef, txPayload);
+            }
 
             return txId;
 
@@ -223,7 +258,9 @@ public final class TransferRepository {
                 if (TextUtils.isEmpty(phone)) phone = cursor.getString(colRaw);
                 if (TextUtils.isEmpty(name)) continue;
 
-                contacts.add(new TransferContact(lookupKey, name, phone != null ? phone : "", 0));
+                // uid left empty — resolved to WalNex UID (or kept empty for external)
+                // only when the user initiates a transfer
+                contacts.add(new TransferContact("", name, phone != null ? phone : "", 0));
             }
         } catch (Exception e) {
             Log.e(TAG, "loadDeviceContacts failed", e);
@@ -236,20 +273,18 @@ public final class TransferRepository {
      * Reads a single contact from a URI returned by the system contact picker.
      */
     public static TransferContact readContactFromUri(Context context, Uri contactUri) {
-        String lookupKey = null, name = null, phone = null;
+        String name = null, phone = null;
 
         try (Cursor c = context.getContentResolver().query(contactUri,
                 new String[]{
                         ContactsContract.Contacts._ID,
-                        ContactsContract.Contacts.LOOKUP_KEY,
                         ContactsContract.Contacts.DISPLAY_NAME_PRIMARY
                 }, null, null, null)) {
 
             if (c == null || !c.moveToFirst()) return null;
 
             long id = c.getLong(c.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
-            lookupKey = c.getString(c.getColumnIndexOrThrow(ContactsContract.Contacts.LOOKUP_KEY));
-            name      = c.getString(c.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY));
+            name    = c.getString(c.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY));
 
             try (Cursor pc = context.getContentResolver().query(
                     ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
@@ -275,11 +310,8 @@ public final class TransferRepository {
         }
 
         if (TextUtils.isEmpty(name)) return null;
-        return new TransferContact(
-                lookupKey != null ? lookupKey : "",
-                name,
-                phone != null ? phone : "",
-                0);
+        // uid left empty — resolved at transfer time
+        return new TransferContact("", name, phone != null ? phone : "", 0);
     }
 
     // ── Frequent contacts (Firestore) ─────────────────────────────────────────
@@ -306,40 +338,41 @@ public final class TransferRepository {
                     Set<String> seen = new HashSet<>();
 
                     for (QueryDocumentSnapshot doc : task.getResult()) {
-                        String senderUid = doc.getString(TransferRecord.FIELD_SENDER_UID);
+                        String senderUid    = doc.getString(TransferRecord.FIELD_SENDER_UID);
                         String recipientUid = doc.getString(TransferRecord.FIELD_RECIPIENT_UID);
-                        if (TextUtils.isEmpty(senderUid) || TextUtils.isEmpty(recipientUid)) {
-                            continue;
-                        }
 
-                        boolean isSender = myUid.equals(senderUid);
-                        String counterpartyUid = isSender ? recipientUid : senderUid;
-                        if (seen.contains(counterpartyUid)) {
-                            continue;
-                        }
+                        if (TextUtils.isEmpty(senderUid)) continue;
 
-                        String name = isSender
-                            ? doc.getString(TransferRecord.FIELD_RECIPIENT_NAME)
-                            : doc.getString(TransferRecord.FIELD_SENDER_NAME);
+                        boolean isSender       = myUid.equals(senderUid);
+                        String  counterpartyUid = isSender ? recipientUid : senderUid;
+
+                        // Skip external transfers (empty recipientUid) in frequent list
+                        if (TextUtils.isEmpty(counterpartyUid)) continue;
+                        if (seen.contains(counterpartyUid)) continue;
+
+                        String name  = isSender
+                                ? doc.getString(TransferRecord.FIELD_RECIPIENT_NAME)
+                                : doc.getString(TransferRecord.FIELD_SENDER_NAME);
                         String phone = isSender
-                            ? doc.getString(TransferRecord.FIELD_RECIPIENT_PHONE)
-                            : doc.getString(TransferRecord.FIELD_SENDER_PHONE);
+                                ? doc.getString(TransferRecord.FIELD_RECIPIENT_PHONE)
+                                : doc.getString(TransferRecord.FIELD_SENDER_PHONE);
 
                         if (TextUtils.isEmpty(name)) {
                             name = !TextUtils.isEmpty(phone) ? phone : counterpartyUid;
                         }
 
-                        contacts.add(new TransferContact(counterpartyUid, name, phone != null ? phone : "", 0));
+                        contacts.add(new TransferContact(
+                                counterpartyUid, name, phone != null ? phone : "", 0));
                         seen.add(counterpartyUid);
 
-                        if (contacts.size() == MAX_FREQUENT) {
-                            break;
-                        }
+                        if (contacts.size() == MAX_FREQUENT) break;
                     }
 
                     return Tasks.forResult(contacts);
                 });
     }
+
+    // ── User lookups ──────────────────────────────────────────────────────────
 
     public static Task<TransferContact> findContactByPhone(String phoneE164) {
         return FirebaseFirestore.getInstance()
@@ -355,38 +388,25 @@ public final class TransferRepository {
                 });
     }
 
-        public static Task<TransferContact> findContactByUid(String uid) {
+    public static Task<TransferContact> findContactByUid(String uid) {
         if (TextUtils.isEmpty(uid)) return Tasks.forResult(null);
-        return FirebaseFirestore.getInstance()
-            .collection(COL_USERS).document(uid).get()
-            .continueWith(task -> {
-                if (!task.isSuccessful() || task.getResult() == null
-                    || !task.getResult().exists()) return null;
-                String fullName = task.getResult().getString("fullName");
-                if (TextUtils.isEmpty(fullName)) return null;
-                String phone = task.getResult().getString("phoneE164");
-                return new TransferContact(
-                    task.getResult().getId(),
-                    fullName,
-                    phone != null ? phone : "",
-                    0);
-            });
-        }
-
-    // ── Private helpers ───────────────────────────────────────────────────────
-
-    private static Task<TransferContact> fetchContactByUid(String uid) {
         return FirebaseFirestore.getInstance()
                 .collection(COL_USERS).document(uid).get()
                 .continueWith(task -> {
                     if (!task.isSuccessful() || task.getResult() == null
                             || !task.getResult().exists()) return null;
                     String fullName = task.getResult().getString("fullName");
-                    String phone    = task.getResult().getString("phoneE164");
                     if (TextUtils.isEmpty(fullName)) return null;
-                    return new TransferContact(uid, fullName, phone != null ? phone : "", 0);
+                    String phone = task.getResult().getString("phoneE164");
+                    return new TransferContact(
+                            task.getResult().getId(),
+                            fullName,
+                            phone != null ? phone : "",
+                            0);
                 });
     }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
 
     private static TransferContact docToContact(QueryDocumentSnapshot doc) {
         if (doc == null) return null;
@@ -398,7 +418,6 @@ public final class TransferRepository {
 
     // ── Custom exceptions ─────────────────────────────────────────────────────
 
-    // UPDATED: Now extends RuntimeException instead of Exception
     public static class InsufficientFundsException extends RuntimeException {
         public InsufficientFundsException(String message) { super(message); }
     }
