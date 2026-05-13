@@ -46,8 +46,9 @@ import java.util.Set;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private static final int HOME_RECENT_LIMIT = 6;
-    private static final int HOME_TX_LIMIT = 6;
+    private static final int HOME_RECENT_LIMIT = 4;   // unique recipients shown
+    private static final int HOME_TX_LIMIT     = 4;   // latest transactions shown
+    private static final int HOME_RECENT_FETCH = 20;  // docs fetched to find 4 unique
 
     // ──────────────────────────────────────────────────────────────────────────
     //  Inner model classes
@@ -117,8 +118,8 @@ public class HomeActivity extends AppCompatActivity {
         bindBalance();
         setupCardActions();
         setupNavBar();
-        loadRecentTransfers();
-        loadLatestTransactions();
+        // loadRecentTransfers() and loadLatestTransactions() are called in onResume(),
+        // which always runs after onCreate() — no need to call them here too.
     }
 
     /**
@@ -329,25 +330,26 @@ public class HomeActivity extends AppCompatActivity {
             .document(user.getUid())
             .collection("transactions")
             .orderBy(TransferRecord.FIELD_CREATED_AT, Query.Direction.DESCENDING)
-            .limit(HOME_RECENT_LIMIT)
+            .limit(HOME_RECENT_FETCH)
             .get()
             .addOnSuccessListener(snapshot -> {
                 List<Recipient> recipients = new ArrayList<>();
                 Set<String> seen = new HashSet<>();
                 for (QueryDocumentSnapshot doc : snapshot) {
-                    String counterpartyUid = resolveCounterpartyUid(doc, user.getUid());
-                    if (TextUtils.isEmpty(counterpartyUid) || seen.contains(counterpartyUid)) {
-                        continue;
-                    }
                     String counterpartyName = resolveCounterpartyName(doc, user.getUid());
-                    if (TextUtils.isEmpty(counterpartyName)) {
-                        counterpartyName = counterpartyUid;
-                    }
+                    if (TextUtils.isEmpty(counterpartyName)) continue;
+
+                    // Use UID as dedup key for WalNex users; fall back to name for
+                    // external contacts whose UID is empty.
+                    String counterpartyUid = resolveCounterpartyUid(doc, user.getUid());
+                    String dedupeKey = !TextUtils.isEmpty(counterpartyUid)
+                            ? counterpartyUid
+                            : counterpartyName;
+                    if (seen.contains(dedupeKey)) continue;
+
+                    seen.add(dedupeKey);
                     recipients.add(new Recipient(counterpartyName, 0));
-                    seen.add(counterpartyUid);
-                    if (recipients.size() >= HOME_RECENT_LIMIT) {
-                        break;
-                    }
+                    if (recipients.size() >= HOME_RECENT_LIMIT) break;
                 }
                 renderRecentTransfers(recipients);
             })
@@ -395,15 +397,13 @@ public class HomeActivity extends AppCompatActivity {
             .document(user.getUid())
             .collection("transactions")
             .orderBy(TransferRecord.FIELD_CREATED_AT, Query.Direction.DESCENDING)
-            .limit(HOME_TX_LIMIT)
+            .limit(HOME_TX_LIMIT)   // fetch exactly 4
             .get()
             .addOnSuccessListener(snapshot -> {
                 List<Transaction> txList = new ArrayList<>();
                 for (QueryDocumentSnapshot doc : snapshot) {
                     Transaction tx = mapTransferTransaction(doc, user.getUid());
-                    if (tx != null) {
-                        txList.add(tx);
-                    }
+                    if (tx != null) txList.add(tx);
                 }
                 renderTransactions(txList);
             })
@@ -474,11 +474,10 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private String resolveCounterpartyUid(QueryDocumentSnapshot doc, String myUid) {
-        String senderUid = doc.getString(TransferRecord.FIELD_SENDER_UID);
+        String senderUid    = doc.getString(TransferRecord.FIELD_SENDER_UID);
         String recipientUid = doc.getString(TransferRecord.FIELD_RECIPIENT_UID);
-        if (TextUtils.isEmpty(senderUid) || TextUtils.isEmpty(recipientUid)) {
-            return null;
-        }
+        if (TextUtils.isEmpty(senderUid)) return null;
+        // recipientUid may be empty for external (non-WalNex) contacts — that is OK.
         return myUid.equals(senderUid) ? recipientUid : senderUid;
     }
 

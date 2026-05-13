@@ -12,7 +12,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.widget.EditText;
@@ -245,23 +244,18 @@ public class HistoryActivity extends AppCompatActivity {
         String lower = currentQuery.toLowerCase(Locale.getDefault());
 
         for (HomeActivity.Transaction tx : allTransactions) {
-            if (!matchesFilterMode(tx)) {
-                continue;
-            }
+            if (!matchesFilterMode(tx)) continue;
 
             if (TextUtils.isEmpty(lower)) {
                 filtered.add(tx);
                 continue;
             }
 
-            String merchant = tx.merchantName != null
-                ? tx.merchantName.toLowerCase(Locale.getDefault())
-                : "";
-            String type = tx.merchantType != null
-                ? tx.merchantType.toLowerCase(Locale.getDefault())
-                : "";
+            String merchant   = tx.merchantName  != null ? tx.merchantName.toLowerCase(Locale.getDefault())  : "";
+            String type       = tx.merchantType  != null ? tx.merchantType.toLowerCase(Locale.getDefault())   : "";
+            String amountStr  = String.format(Locale.US, "%.2f", tx.amount);
 
-            if (merchant.contains(lower) || type.contains(lower)) {
+            if (merchant.contains(lower) || type.contains(lower) || amountStr.contains(lower)) {
                 filtered.add(tx);
             }
         }
@@ -277,24 +271,27 @@ public class HistoryActivity extends AppCompatActivity {
 
     private void showFilterDialog() {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_history_filter, null);
-        RadioGroup group = view.findViewById(R.id.radioGroupFilter);
         RadioButton optionAll = view.findViewById(R.id.radioFilterAll);
-        RadioButton optionIn = view.findViewById(R.id.radioFilterIn);
+        RadioButton optionIn  = view.findViewById(R.id.radioFilterIn);
         RadioButton optionOut = view.findViewById(R.id.radioFilterOut);
         View rowAll = view.findViewById(R.id.rowFilterAll);
-        View rowIn = view.findViewById(R.id.rowFilterIn);
+        View rowIn  = view.findViewById(R.id.rowFilterIn);
         View rowOut = view.findViewById(R.id.rowFilterOut);
         TextView cancel = view.findViewById(R.id.textFilterCancel);
-        TextView reset = view.findViewById(R.id.textFilterReset);
-        View apply = view.findViewById(R.id.buttonFilterApply);
+        TextView reset  = view.findViewById(R.id.textFilterReset);
+        View     apply  = view.findViewById(R.id.buttonFilterApply);
 
-        if (filterMode == FilterMode.CREDIT) {
-            optionIn.setChecked(true);
-        } else if (filterMode == FilterMode.DEBIT) {
-            optionOut.setChecked(true);
-        } else {
-            optionAll.setChecked(true);
-        }
+        // RadioButtons are NOT direct children of RadioGroup, so the group's
+        // mutual-exclusion and getCheckedRadioButtonId() don't work here.
+        // We track the pending selection in a 1-element array and sync visuals manually.
+        final FilterMode[] pending = {filterMode};
+
+        Runnable syncRadios = () -> {
+            optionAll.setChecked(pending[0] == FilterMode.ALL);
+            optionIn .setChecked(pending[0] == FilterMode.CREDIT);
+            optionOut.setChecked(pending[0] == FilterMode.DEBIT);
+        };
+        syncRadios.run();
 
         AlertDialog dialog = new AlertDialog.Builder(this)
             .setView(view)
@@ -303,33 +300,33 @@ public class HistoryActivity extends AppCompatActivity {
         dialog.setOnShowListener(d -> {
             if (dialog.getWindow() != null) {
                 dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-                int screenWidth = getResources().getDisplayMetrics().widthPixels;
-                int maxWidth = dpToPx(320);
-                int dialogWidth = Math.min(maxWidth, (int) (screenWidth * 0.92f));
-                dialog.getWindow().setLayout(dialogWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+                int sw = getResources().getDisplayMetrics().widthPixels;
+                dialog.getWindow().setLayout(
+                        Math.min(dpToPx(320), (int) (sw * 0.92f)),
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
             }
         });
 
-        rowAll.setOnClickListener(v -> optionAll.setChecked(true));
-        rowIn.setOnClickListener(v -> optionIn.setChecked(true));
-        rowOut.setOnClickListener(v -> optionOut.setChecked(true));
+        // Row background touch and RadioButton direct touch both need to update pending[].
+        // RadioButton consumes touch before it reaches the parent row, so attach listeners
+        // to both so that tapping anywhere in the row works.
+        rowAll.setOnClickListener(v -> { pending[0] = FilterMode.ALL;    syncRadios.run(); });
+        rowIn .setOnClickListener(v -> { pending[0] = FilterMode.CREDIT; syncRadios.run(); });
+        rowOut.setOnClickListener(v -> { pending[0] = FilterMode.DEBIT;  syncRadios.run(); });
+        optionAll.setOnClickListener(v -> { pending[0] = FilterMode.ALL;    syncRadios.run(); });
+        optionIn .setOnClickListener(v -> { pending[0] = FilterMode.CREDIT; syncRadios.run(); });
+        optionOut.setOnClickListener(v -> { pending[0] = FilterMode.DEBIT;  syncRadios.run(); });
 
         cancel.setOnClickListener(v -> dialog.dismiss());
         reset.setOnClickListener(v -> {
+            pending[0] = FilterMode.ALL;
+            syncRadios.run();
             filterMode = FilterMode.ALL;
-            optionAll.setChecked(true);
             applyFilters();
             dialog.dismiss();
         });
         apply.setOnClickListener(v -> {
-            int checkedId = group.getCheckedRadioButtonId();
-            if (checkedId == R.id.radioFilterIn) {
-                filterMode = FilterMode.CREDIT;
-            } else if (checkedId == R.id.radioFilterOut) {
-                filterMode = FilterMode.DEBIT;
-            } else {
-                filterMode = FilterMode.ALL;
-            }
+            filterMode = pending[0];
             applyFilters();
             dialog.dismiss();
         });
