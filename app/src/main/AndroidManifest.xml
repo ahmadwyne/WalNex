@@ -28,12 +28,6 @@
             android:name=".TransferToActivity"
             android:exported="false" />
         <activity
-            android:name=".TransfertoUserActivity"
-            android:exported="false" />
-        <activity
-            android:name=".TransfertoActivity"
-            android:exported="false" />
-        <activity
             android:name=".CardPaymentActivity"
             android:exported="false" />
         <activity
@@ -64,18 +58,11 @@
             android:name=".PayBillsActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.PayBillsActivity"
-            android:exported="false" />
-        <activity
             android:name=".MoreActivity"
             android:exported="false" />
         <activity
             android:name=".HistoryActivity"
             android:exported="false" />
-        <activity
-            android:name=".ui.HistoryActivity"
-            android:exported="false" />
-
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
