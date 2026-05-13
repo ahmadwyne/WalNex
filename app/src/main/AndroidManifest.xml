@@ -28,6 +28,9 @@
             android:name=".TransferToActivity"
             android:exported="false" />
         <activity
+            android:name=".AddNewCardActivity"
+            android:exported="false" />
+        <activity
             android:name=".CardPaymentActivity"
             android:exported="false" />
         <activity

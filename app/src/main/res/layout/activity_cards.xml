@@ -47,6 +47,40 @@
                 android:padding="4dp" />
         </LinearLayout>
 
+        <!-- ===== EMPTY STATE ===== -->
+        <LinearLayout
+            android:id="@+id/viewEmptyState"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="48dp"
+            android:paddingStart="32dp"
+            android:paddingEnd="32dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cards_empty_title"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/home_section_title"
+                android:gravity="center" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/cards_empty_subtitle"
+                android:fontFamily="@font/plus_jakarta_sans"
+                android:textSize="14sp"
+                android:textColor="@color/home_section_subtitle"
+                android:gravity="center" />
+
+        </LinearLayout>
+
         <!--
             ViewPager2 for the stacked card deck.
 

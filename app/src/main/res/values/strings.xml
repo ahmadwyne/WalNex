@@ -110,6 +110,27 @@
     <string name="cards_title">My Cards</string>
     <string name="cards_add_card">Add card +</string>
     <string name="cards_balance_label">Balance</string>
+    <string name="cards_empty_title">No cards yet</string>
+    <string name="cards_empty_subtitle">Tap \'Add card +\' at the top to add your first card.</string>
+
+    <!-- Add New Card Screen -->
+    <string name="add_card_title">Add New Card</string>
+    <string name="add_card_subtitle">Choose a design and fill in the card details.</string>
+    <string name="add_card_design_label">CARD DESIGN</string>
+    <string name="add_card_details_label">CARD DETAILS</string>
+    <string name="add_card_field_name">Cardholder Name</string>
+    <string name="add_card_field_name_hint">e.g. Ahmad Wyne</string>
+    <string name="add_card_field_balance">Initial Balance (PKR)</string>
+    <string name="add_card_field_balance_hint">e.g. 5000</string>
+    <string name="add_card_btn">Add Card</string>
+    <string name="add_card_btn_loading">Adding…</string>
+    <string name="add_card_success">Card added successfully</string>
+    <string name="add_card_error_name">Please enter a cardholder name</string>
+    <string name="qr_no_camera">No camera app found on this device</string>
+    <string name="add_card_error_balance">Enter a valid balance (0 or more)</string>
+    <string name="add_card_error_not_signed_in">You must be signed in to add a card</string>
+    <string name="add_card_error_save">Could not save card. Please try again.</string>
+    <string name="add_card_error_load">Could not load cards. Please try again.</string>
 
     <!-- Card Payment Screen -->
     <string name="card_payment_back">Back</string>
