@@ -3,16 +3,22 @@ package com.example.walnex;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.Editable;
+import android.text.InputType;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -80,13 +86,25 @@ public class TransferToActivity extends AppCompatActivity {
                         }
                     });
 
-    // ── Pick-contact launcher (device phonebook) ──────────────────────────────
+    // ── Save-contact launcher: opens system Add Contact form, then transfers ──
 
-    private final ActivityResultLauncher<Void> pickContactLauncher =
+    private String pendingPhone;
+    private String pendingName;
+
+    private final ActivityResultLauncher<Intent> saveContactLauncher =
             registerForActivityResult(
-                    new ActivityResultContracts.PickContact(),
-                    uri -> {
-                        if (uri != null) handlePickedContact(uri);
+                    new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        // Navigate to transfer after the contacts app closes,
+                        // regardless of whether the user actually saved the entry.
+                        if (!TextUtils.isEmpty(pendingPhone)) {
+                            String name = TextUtils.isEmpty(pendingName)
+                                    ? pendingPhone : pendingName;
+                            openTransferUser(
+                                    new TransferContact("", name, pendingPhone, 0));
+                            pendingPhone = null;
+                            pendingName  = null;
+                        }
                     });
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -145,32 +163,87 @@ public class TransferToActivity extends AppCompatActivity {
     // ──────────────────────────────────────────────────────────────────────────
 
     private void setupNewContact() {
-        findViewById(R.id.layoutNewContact).setOnClickListener(v -> {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
-                    == PackageManager.PERMISSION_GRANTED) {
-                // Launch contact picker
-                pickContactLauncher.launch(null);
-            } else {
-                // Permission not yet granted — open system "Add Contact" screen instead
-                Intent intent = new Intent(ContactsContract.Intents.Insert.ACTION);
-                intent.setType(ContactsContract.RawContacts.CONTENT_TYPE);
-                startActivity(intent);
-            }
-        });
+        findViewById(R.id.layoutNewContact).setOnClickListener(v -> showEnterNumberDialog());
     }
 
     /**
-     * Handles a contact URI returned by the system contact picker.
-     * Reads the display name and first phone number, then navigates to the
-     * amount-entry screen.
+     * Shows a dialog with a phone-number field and optional name field.
+     * "Transfer"     → navigates directly to the amount-entry screen.
+     * "Save Contact" → opens the system Add Contact form pre-filled with the
+     *                  entered number, then navigates to transfer on return.
      */
-    private void handlePickedContact(Uri contactUri) {
-        TransferContact contact = TransferRepository.readContactFromUri(this, contactUri);
-        if (contact == null) {
-            Toast.makeText(this, R.string.transfer_contact_read_error, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        openTransferUser(contact);
+    private void showEnterNumberDialog() {
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        int dp16 = (int) (16 * getResources().getDisplayMetrics().density);
+        int dp8  = dp16 / 2;
+        container.setPadding(dp16, dp8, dp16, 0);
+
+        EditText editPhone = new EditText(this);
+        editPhone.setHint("Phone number");
+        editPhone.setInputType(InputType.TYPE_CLASS_PHONE);
+        container.addView(editPhone);
+
+        EditText editName = new EditText(this);
+        editName.setHint("Name (optional)");
+        editName.setInputType(
+                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        nameParams.topMargin = dp8;
+        editName.setLayoutParams(nameParams);
+        container.addView(editName);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setTitle("Enter phone number")
+                .setView(container)
+                .setPositiveButton("Transfer", null)
+                .setNeutralButton("Save Contact", null)
+                .setNegativeButton("Cancel", null)
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            editPhone.requestFocus();
+            InputMethodManager imm =
+                    (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showSoftInput(editPhone, InputMethodManager.SHOW_IMPLICIT);
+            }
+
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                String phone = editPhone.getText().toString().trim();
+                if (TextUtils.isEmpty(phone)) {
+                    editPhone.setError("Enter a phone number");
+                    return;
+                }
+                String name = editName.getText().toString().trim();
+                dialog.dismiss();
+                openTransferUser(new TransferContact(
+                        "", TextUtils.isEmpty(name) ? phone : name, phone, 0));
+            });
+
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
+                String phone = editPhone.getText().toString().trim();
+                if (TextUtils.isEmpty(phone)) {
+                    editPhone.setError("Enter a phone number");
+                    return;
+                }
+                pendingPhone = phone;
+                pendingName  = editName.getText().toString().trim();
+                dialog.dismiss();
+
+                Intent intent = new Intent(ContactsContract.Intents.Insert.ACTION);
+                intent.setType(ContactsContract.RawContacts.CONTENT_TYPE);
+                intent.putExtra(ContactsContract.Intents.Insert.PHONE, pendingPhone);
+                if (!TextUtils.isEmpty(pendingName)) {
+                    intent.putExtra(ContactsContract.Intents.Insert.NAME, pendingName);
+                }
+                saveContactLauncher.launch(intent);
+            });
+        });
+
+        dialog.show();
     }
 
     // ──────────────────────────────────────────────────────────────────────────
