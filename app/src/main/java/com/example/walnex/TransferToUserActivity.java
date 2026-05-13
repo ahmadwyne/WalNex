@@ -258,22 +258,23 @@ public class TransferToUserActivity extends AppCompatActivity {
         resolveRecipientForTransfer()
             .addOnSuccessListener(resolved -> {
                 if (resolved == null) {
+                    // No phone number and no valid UID — cannot proceed
                     layoutSecurePay.setEnabled(true);
                     showKeypadAgain();
                     startActivity(TransferFailedActivity.newIntent(
-                        this,
-                        getString(R.string.transfer_recipient_not_found)
-                    ));
+                            this, getString(R.string.transfer_recipient_not_found)));
                     return;
                 }
 
                 recipient = resolved;
 
+                // resolved.uid is non-empty → internal (WalNex-to-WalNex) transfer
+                // resolved.uid is empty    → external (debit-only) transfer
                 TransferRepository.submitTransfer(resolved, amount, CURRENCY)
                     .addOnSuccessListener(txId -> {
                         String recipientLabel = !TextUtils.isEmpty(resolved.fullName)
-                            ? resolved.fullName
-                            : resolved.phoneE164;
+                                ? resolved.fullName
+                                : resolved.phoneE164;
                         Intent successIntent = new Intent(this, PaymentDoneActivity.class);
                         successIntent.putExtra("extra_pd_recipient_name", recipientLabel);
                         successIntent.putExtra("extra_pd_amount",         amount);
@@ -285,46 +286,56 @@ public class TransferToUserActivity extends AppCompatActivity {
                     .addOnFailureListener(e -> {
                         layoutSecurePay.setEnabled(true);
                         showKeypadAgain();
-
                         String reason = e instanceof TransferRepository.InsufficientFundsException
-                            ? getString(R.string.transfer_insufficient_funds)
-                            : "Transfer failed: " + e.getLocalizedMessage();
-
+                                ? getString(R.string.transfer_insufficient_funds)
+                                : getString(R.string.transfer_failed);
                         startActivity(TransferFailedActivity.newIntent(this, reason));
                     });
             })
             .addOnFailureListener(e -> {
                 layoutSecurePay.setEnabled(true);
                 showKeypadAgain();
-                String message = e.getLocalizedMessage();
-                String reason = TextUtils.isEmpty(message)
-                    ? getString(R.string.transfer_failed)
-                    : "Recipient lookup failed: " + message;
-                startActivity(TransferFailedActivity.newIntent(this, reason));
+                startActivity(TransferFailedActivity.newIntent(
+                        this, getString(R.string.transfer_failed)));
             });
     }
 
+    /**
+     * Resolves the recipient for the transfer.
+     *
+     * Phone-first lookup strategy:
+     *  1. If a phone number is available, query Firestore.
+     *     • Found  → WalNex user: returns contact with Firebase UID (internal transfer).
+     *     • Missed → plain device contact: returns contact with empty UID (external transfer).
+     *  2. If no phone but a UID is present (e.g. frequent contacts), look up by UID.
+     *     • Found  → internal transfer.
+     *     • Missed → returns null (not enough info to proceed).
+     *  3. Neither phone nor UID → returns null (transfer blocked).
+     */
     private Task<TransferContact> resolveRecipientForTransfer() {
-        if (recipient == null) {
-            return Tasks.forResult(null);
+        if (recipient == null) return Tasks.forResult(null);
+
+        // Phone-based lookup (covers device contacts and frequent contacts that have a phone)
+        if (!TextUtils.isEmpty(recipient.phoneE164)) {
+            return TransferRepository.findContactByPhone(recipient.phoneE164)
+                    .continueWith(task -> {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            // WalNex user found → internal transfer
+                            return task.getResult();
+                        }
+                        // Not a WalNex user → external transfer (debit sender only)
+                        return new TransferContact(
+                                "", recipient.fullName, recipient.phoneE164, recipient.avatarRes);
+                    });
         }
+
+        // UID-only fallback (frequent contacts that somehow have no phone number stored)
         if (!TextUtils.isEmpty(recipient.uid)) {
             return TransferRepository.findContactByUid(recipient.uid)
-                .continueWithTask(task -> {
-                    TransferContact byUid = task.isSuccessful() ? task.getResult() : null;
-                    if (byUid != null) {
-                        return Tasks.forResult(byUid);
-                    }
-                    if (TextUtils.isEmpty(recipient.phoneE164)) {
-                        return Tasks.forResult(null);
-                    }
-                    return TransferRepository.findContactByPhone(recipient.phoneE164);
-                });
+                    .continueWith(task -> task.isSuccessful() ? task.getResult() : null);
         }
-        if (TextUtils.isEmpty(recipient.phoneE164)) {
-            return Tasks.forResult(null);
-        }
-        return TransferRepository.findContactByPhone(recipient.phoneE164);
+
+        return Tasks.forResult(null);
     }
 
     /**
