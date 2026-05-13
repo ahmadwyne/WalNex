@@ -3,6 +3,7 @@ package com.example.walnex;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -15,6 +16,7 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,13 +32,15 @@ public class CardsActivity extends AppCompatActivity {
         public final String maskedNumber;
         public final double balance;
         public final String currency;
+        public final String cardType;
 
         public CardItem(String holderName, String maskedNumber,
-                        double balance, String currency) {
+                        double balance, String currency, String cardType) {
             this.holderName   = holderName;
             this.maskedNumber = maskedNumber;
             this.balance      = balance;
             this.currency     = currency;
+            this.cardType     = cardType;
         }
     }
 
@@ -45,6 +49,7 @@ public class CardsActivity extends AppCompatActivity {
     // ──────────────────────────────────────────────────────────────────────────
 
     private ViewPager2   viewPagerCards;
+    private View         viewEmptyState;
     private LinearLayout navHome, navHistory, navCards, navMore;
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -74,6 +79,11 @@ public class CardsActivity extends AppCompatActivity {
         bindViews();
         setupAddCard();
         setupBottomNav();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         loadCards();
     }
 
@@ -83,6 +93,7 @@ public class CardsActivity extends AppCompatActivity {
 
     private void bindViews() {
         viewPagerCards = findViewById(R.id.viewPagerCards);
+        viewEmptyState = findViewById(R.id.viewEmptyState);
         navHome        = findViewById(R.id.navHome);
         navHistory     = findViewById(R.id.navHistory);
         navCards       = findViewById(R.id.navCards);
@@ -90,39 +101,58 @@ public class CardsActivity extends AppCompatActivity {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    //  Add card button
+    //  Add card button → launches AddNewCardActivity
     // ──────────────────────────────────────────────────────────────────────────
 
     private void setupAddCard() {
         TextView textAddCard = findViewById(R.id.textAddCard);
         if (textAddCard != null) {
             textAddCard.setOnClickListener(v ->
-                    Toast.makeText(this, "Add card – coming soon", Toast.LENGTH_SHORT).show());
+                    startActivity(new Intent(this, AddNewCardActivity.class)));
         }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    //  Load cards
+    //  Load cards from Firestore
     // ──────────────────────────────────────────────────────────────────────────
 
     private void loadCards() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        String defaultName = (user != null && user.getDisplayName() != null)
-                ? user.getDisplayName()
-                : "Abdullah Ghatashe";
+        if (user == null) return;
 
-        // TODO: Replace with real Firestore fetch from users/{uid}/cards
-        List<CardItem> cards = buildSampleCards(defaultName);
-        setupViewPager(cards);
+        new CardRepository(user.getUid()).getCards(
+                snapshot -> {
+                    List<CardItem> cards = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        CardModel model = doc.toObject(CardModel.class);
+                        if (model == null) continue;
+
+                        String name      = model.getHolderName() != null  ? model.getHolderName()  : "Card Holder";
+                        String lastFour  = model.getLastFour()   != null  ? model.getLastFour()    : "0000";
+                        String currency  = model.getCurrency()   != null  ? model.getCurrency()    : "PKR";
+                        String cardType  = model.getCardType()   != null  ? model.getCardType()    : CardModel.TYPE_COSMIC_PURPLE;
+
+                        cards.add(new CardItem(name, "**** " + lastFour,
+                                model.getBalance(), currency, cardType));
+                    }
+
+                    showEmptyState(cards.isEmpty());
+                    if (!cards.isEmpty()) setupViewPager(cards);
+                },
+                error -> Toast.makeText(this, getString(R.string.add_card_error_load),
+                        Toast.LENGTH_SHORT).show()
+        );
     }
 
-    private List<CardItem> buildSampleCards(String holderName) {
-        List<CardItem> list = new ArrayList<>();
-        list.add(new CardItem(holderName, "**** 2312",  2354.00, "PKR"));
-        list.add(new CardItem(holderName, "**** 5432", 12800.50, "PKR"));
-        list.add(new CardItem(holderName, "**** 3245",  4750.75, "PKR"));
-        list.add(new CardItem(holderName, "**** 7891",  9100.00, "PKR"));
-        return list;
+    // ──────────────────────────────────────────────────────────────────────────
+    //  Empty state
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private void showEmptyState(boolean empty) {
+        if (viewEmptyState != null) {
+            viewEmptyState.setVisibility(empty ? View.VISIBLE : View.GONE);
+        }
+        viewPagerCards.setVisibility(empty ? View.GONE : View.VISIBLE);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -143,35 +173,7 @@ public class CardsActivity extends AppCompatActivity {
         });
 
         viewPagerCards.setAdapter(adapter);
-
-        // Keep the 2 adjacent pages laid out so PageTransformer can position them
         viewPagerCards.setOffscreenPageLimit(3);
-
-        // ── Stacked-card PageTransformer ──────────────────────────────────────
-        //
-        //  How it works:
-        //  • position == 0  → selected card  : full size, no translation, full alpha
-        //  • position == -1 → previous card  : peek above (translated up + scaled down)
-        //  • position == +1 → next card      : peek above (translated up more + scaled down)
-        //
-        //  All cards that are "behind" the selected one are translated upward so
-        //  that only their top edge (name + number row) peeks above the selected card.
-        //  The selected card swipe reveals the next card beneath it.
-        // ─────────────────────────────────────────────────────────────────────
-
-        // ── Stacked-card PageTransformer ──────────────────────────────────────
-        //
-        //  Pages are match_parent height. Each page's CardView sits at the
-        //  bottom of the page frame. For cards that are "behind" (position > 0),
-        //  we translate the entire page UP so only its top strip (name + number)
-        //  peeks above the active card.
-        //
-        //  PEEK_DP = how many dp of the behind-card's top strip remain visible.
-        //  We translate the page up by (pageHeight - cardHeight - marginBottom - peekPx).
-        //  Since we can't know exact px at transformer time, we use a fraction of
-        //  the page height as the offset: each behind-card shifts up by ~85% of
-        //  the page height, leaving ~15% (the card top strip) visible.
-        // ─────────────────────────────────────────────────────────────────────
 
         viewPagerCards.setPageTransformer((page, position) -> {
 
@@ -181,27 +183,13 @@ public class CardsActivity extends AppCompatActivity {
             }
 
             page.setAlpha(1f);
-            page.setTranslationZ(0f); // reset
+            page.setTranslationZ(0f);
 
             if (position <= 0f) {
-                // Active card (0) and card swiping off to the left (< 0):
-                // slide normally, no stacking
                 page.setTranslationY(0f);
                 page.setScaleX(1f);
                 page.setScaleY(1f);
-
             } else {
-                // Behind cards (position > 0): stack them upward.
-                // Translate each one up so only ~44dp of its top peeks out.
-                // page.getHeight() == pager height (360dp in the layout).
-                // CardView is 200dp + 16dp marginBottom = 216dp from bottom.
-                // So the card top is at: pageHeight - 216dp from the top of the page.
-                // We want to show PEEK_DP (44dp) of the card top above the active card.
-                // => translationY = -(pageHeight - 216dp - PEEK_DP) * position
-                //
-                // In practice, use a simpler relative formula that looks right:
-                //   shift each behind-card up by (pageHeight * 0.82 * position)
-                // This leaves ~18% of the page at the top = ≈65dp = card top strip visible.
                 float pageHeight  = page.getHeight();
                 float translationY = -(pageHeight * 0.82f) * position;
                 float scale        = 1f - (0.04f * position);
@@ -209,7 +197,6 @@ public class CardsActivity extends AppCompatActivity {
                 page.setTranslationY(translationY);
                 page.setScaleX(Math.max(scale, 0.88f));
                 page.setScaleY(Math.max(scale, 0.88f));
-                // Cards further back render behind cards in front
                 page.setTranslationZ(-position * 10f);
             }
         });
@@ -233,7 +220,6 @@ public class CardsActivity extends AppCompatActivity {
             finish();
         });
 
-        // current tab – no-op
         if (navCards != null) navCards.setOnClickListener(v -> { });
 
         if (navMore != null) navMore.setOnClickListener(v -> {
