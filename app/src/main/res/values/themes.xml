@@ -110,4 +110,12 @@
     </style>
 
     <style name="Theme.WalNex" parent="Base.Theme.WalNex" />
+
+    <!-- White AlertDialog — full light dialog theme so it ignores the app's dark colorSurface -->
+    <style name="WalNex.Dialog.White" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorPrimary">#643CC2</item>
+        <item name="colorAccent">#643CC2</item>
+        <item name="android:fontFamily">@font/plus_jakarta_sans</item>
+        <item name="fontFamily">@font/plus_jakarta_sans</item>
+    </style>
 </resources>

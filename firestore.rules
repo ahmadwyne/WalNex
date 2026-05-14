@@ -137,6 +137,25 @@ service cloud.firestore {
       allow delete:         if isSelf(uid);
     }
 
+    function billerFieldsValid() {
+      return request.resource.data.keys().hasOnly([
+        'category',
+        'accountNumber',
+        'dueAmount',
+        'dueDateMs',
+        'createdAt'
+      ])
+      && request.resource.data.category is string
+      && request.resource.data.accountNumber is string
+      && request.resource.data.dueAmount is number;
+    }
+
+    match /users/{uid}/billers/{billerId} {
+      allow read:           if isSelf(uid);
+      allow create, update: if isSelf(uid) && billerFieldsValid();
+      allow delete:         if isSelf(uid);
+    }
+
     match /ledger/{uid}/entries/{entryId} {
       allow read: if isSelf(uid);
       allow write: if false;
